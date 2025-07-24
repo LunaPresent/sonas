@@ -1,0 +1,11 @@
+# main whitespace settings
+hard_tabs = true
+max_width = 100
+newline_style = "Unix"
+
+# imports and mods
+reorder_imports = true
+reorder_modules = true
+
+# functions
+fn_params_layout = "Tall"
