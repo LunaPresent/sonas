@@ -1,5 +1,3 @@
-#![allow(dead_code)] // Remove this once you start using the code
-
 use std::{
 	io::{Stdout, stdout},
 	ops::{Deref, DerefMut},
@@ -201,11 +199,6 @@ impl Tui {
 		self.exit()?;
 		#[cfg(not(windows))]
 		signal_hook::low_level::raise(signal_hook::consts::signal::SIGTSTP)?;
-		Ok(())
-	}
-
-	pub fn resume(&mut self) -> Result<()> {
-		self.enter()?;
 		Ok(())
 	}
 
