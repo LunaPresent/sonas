@@ -115,7 +115,7 @@ pub trait Component {
 	///
 	/// # Arguments
 	///
-	/// * `f` - A frame used for rendering.
+	/// * `frame` - A frame used for rendering.
 	/// * `area` - The area in which the component should be drawn.
 	///
 	/// # Returns
