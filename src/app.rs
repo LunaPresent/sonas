@@ -167,7 +167,7 @@ impl App {
 				if let Err(err) = component.draw(frame, frame.area()) {
 					let _ = self
 						.action_tx
-						.send(Action::Error(format!("Failed to draw: {:?}", err)));
+						.send(Action::Error(format!("Failed to draw: {err:?}")));
 				}
 			}
 		})?;
