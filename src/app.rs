@@ -26,6 +26,7 @@ pub struct App {
 }
 
 #[derive(Default, Debug, Copy, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
 pub enum Mode {
 	#[default]
 	Home,
@@ -71,7 +72,7 @@ impl App {
 			self.handle_actions(&mut tui)?;
 			if self.should_suspend {
 				tui.suspend()?;
-				action_tx.send(Action::Resume)?;
+				action_tx.send(Action::Unsuspend)?;
 				action_tx.send(Action::ClearScreen)?;
 				tui.enter()?;
 			} else if self.should_quit {
@@ -140,7 +141,7 @@ impl App {
 				}
 				Action::Quit => self.should_quit = true,
 				Action::Suspend => self.should_suspend = true,
-				Action::Resume => self.should_suspend = false,
+				Action::Unsuspend => self.should_suspend = false,
 				Action::ClearScreen => tui.terminal.clear()?,
 				Action::Resize(w, h) => self.handle_resize(tui, w, h)?,
 				Action::Render => self.render(tui)?,

@@ -1,6 +1,6 @@
-[keys.Home]
-"<q>" = "Quit"
-"<Ctrl-d>" = "Quit"
-"<Ctrl-c>" = "Quit"
-"<Ctrl-z>" = "Suspend"
-"<?>" = "Help"
+[keys.home]
+"<q>" = "quit"
+"<Ctrl-d>" = "quit"
+"<Ctrl-c>" = "quit"
+"<Ctrl-z>" = "suspend"
+"<?>" = "help"
