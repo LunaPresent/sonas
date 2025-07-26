@@ -4,11 +4,20 @@ version = "0.1.0"
 edition = "2024"
 description = "A modern terminal music player written in Rust"
 authors = ["Luna Present <code@lunapresent.net>"]
-build = "build.rs"
 license = "EUPL-1.2"
 repository = "https://github.com/LunaPresent/zankyou"
 keywords = ["music", "lyrics", "synced-lyrics"]
 categories = ["multimedia::audio"]
+build = "build.rs"
+default-run = "zankyou"
+
+[[bin]]
+name = "zankyou"
+path = "src/zankyou/main.rs"
+
+[[bin]]
+name = "zankyou-server"
+path = "src/zankyou-server/main.rs"
 
 [dependencies]
 better-panic = "0.3.0"

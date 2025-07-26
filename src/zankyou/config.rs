@@ -13,7 +13,7 @@ use tracing::error;
 
 use crate::{action::Action, app::Mode};
 
-const CONFIG: &str = include_str!("../.config/config.toml");
+const CONFIG: &str = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/.config/config.toml"));
 
 #[derive(Clone, Debug, Deserialize, Default)]
 pub struct AppConfig {
