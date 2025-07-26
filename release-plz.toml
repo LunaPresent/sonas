@@ -1,0 +1,26 @@
+[workspace]
+allow_dirty = false
+changelog_update = true
+dependencies_update = false
+git_release_enable = false
+git_tag_enable = true
+publish = false
+semver_check = false
+
+[changelog]
+header = "# Changelog"
+trim = true
+protect_breaking_commits = true
+sort_commits = "newest"
+commit_parsers = [
+	{ message = "^feat(\\(.*\\))?: add", group = "Added" },
+	{ message = "^feat", group = "Changed" },
+	{ message = "^feat(\\(.*\\))?: remove", group = "Removed" },
+	{ message = "^feat(\\(.*\\))?: delete", group = "Removed" },
+	{ message = "^fix", group = "Fixed" },
+	{ message = "^refactor", skip = true },
+	{ message = "^ci", skip = true },
+	{ message = "^docs", skip = true },
+	{ message = "^chore", skip = true },
+	{ footer = "^changelog: ?ignore", skip = true },
+]
