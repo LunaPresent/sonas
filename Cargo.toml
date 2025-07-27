@@ -16,8 +16,8 @@ name = "zankyou"
 path = "src/zankyou/main.rs"
 
 [[bin]]
-name = "zankyou-server"
-path = "src/zankyou-server/main.rs"
+name = "zankyoud"
+path = "src/zankyoud/main.rs"
 
 [dependencies]
 better-panic = "0.3.0"

@@ -25,7 +25,7 @@ impl<'a> Home<'a> {
 	}
 
 	fn request(r: &[u8]) -> Result<String> {
-		let name = "zankyou-server.sock".to_ns_name::<GenericNamespaced>()?;
+		let name = "zankyoud.sock".to_ns_name::<GenericNamespaced>()?;
 		let mut buffer = String::with_capacity(128);
 		let mut conn = BufReader::new(Stream::connect(name)?);
 		conn.get_mut().write_all(r)?;

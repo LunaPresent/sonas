@@ -9,7 +9,7 @@ use {
 
 #[tokio::main]
 async fn main() -> io::Result<()> {
-	let printname = "zankyou-server.sock";
+	let printname = "zankyoud.sock";
 	let name = printname.to_ns_name::<GenericNamespaced>()?;
 
 	let opts = ListenerOptions::new().name(name);
