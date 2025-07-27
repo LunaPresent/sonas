@@ -4,3 +4,5 @@
 "<Ctrl-c>" = "quit"
 "<Ctrl-z>" = "suspend"
 "<?>" = "help"
+"<m>" = "marco"
+"<p>" = "ping"

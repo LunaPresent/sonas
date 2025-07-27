@@ -20,4 +20,6 @@ pub enum Action {
 	Quit,
 	Suspend,
 	Help,
+	Marco,
+	Ping,
 }
