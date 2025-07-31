@@ -1,13 +1,13 @@
-pub use counter::CounterComponent;
 use derive_more::From;
-use ratatui::layout::Rect;
-pub use root::RootComponent;
 
-use crate::event::{AppEvent, Event};
+use crate::event::{Dispatch, Event, EventDispatch};
+pub use counter::CounterComponent;
+pub use root::RootComponent;
 
 mod counter;
 mod root;
 
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum EventFlow {
 	/// Signifies the event should not be further handled by other components
 	Consume,
@@ -15,117 +15,105 @@ pub enum EventFlow {
 	Propagate,
 }
 
-#[derive(Debug, From)]
-pub enum GenericComponentRef<'a> {
-	RootComponent(&'a RootComponent),
-	CounterComponent(&'a CounterComponent),
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+enum FollowResult {
+	Consume,
+	Propagate(Ref),
 }
 
-#[derive(Debug, From)]
-pub enum GenericComponentRefMut<'a> {
-	RootComponent(&'a mut RootComponent),
-	CounterComponent(&'a mut CounterComponent),
+#[derive(Debug, Copy, Clone, PartialEq, Eq, From)]
+enum Ref {
+	RootComponent(*mut RootComponent),
+	CounterComponent(*mut CounterComponent),
 }
 
-impl<'a> GenericComponentRefMut<'a> {
-	fn handle_event(self, event: &AppEvent) -> EventFlow {
-		match self {
-			GenericComponentRefMut::RootComponent(c) => c.handle_event(event),
-			GenericComponentRefMut::CounterComponent(c) => c.handle_event(event),
+impl Ref {
+	fn handle_input_event_impl<C: Component>(component: *mut C, event: &Event) -> EventFlow
+	where
+		Ref: From<*mut C>,
+	{
+		unsafe {
+			if let FollowResult::Propagate(child) = (*component).follow_focus() {
+				if Self::handle_input_event(child, event) == EventFlow::Propagate {
+					(*component).handle_event(event)
+				} else {
+					EventFlow::Consume
+				}
+			} else {
+				(*component).handle_event(event)
+			}
 		}
 	}
 
-	fn handle_broadcast(self, event: &AppEvent) {
-		match self {
-			GenericComponentRefMut::RootComponent(c) => c.handle_broadcast(event),
-			GenericComponentRefMut::CounterComponent(c) => c.handle_broadcast(event),
+	fn handle_broadcast_event_impl<C: Component>(component: *mut C, event: &Event)
+	where
+		Ref: From<*mut C>,
+	{
+		unsafe {
+			(*component).handle_broadcast(event);
+			for c in (*component).children() {
+				c.handle_broadcast_event(event);
+			}
 		}
 	}
 
-	fn children(self) -> &'a [GenericComponentRef<'a>] {
+	fn handle_input_event(self, event: &Event) -> EventFlow {
 		match self {
-			GenericComponentRefMut::RootComponent(c) => c.children(),
-			GenericComponentRefMut::CounterComponent(c) => c.children(),
+			Self::RootComponent(c) => Self::handle_input_event_impl(c, event),
+			Self::CounterComponent(c) => Self::handle_input_event_impl(c, event),
 		}
 	}
 
-	fn children_mut(self) -> &'a [GenericComponentRefMut<'a>] {
+	fn handle_broadcast_event(self, event: &Event) {
 		match self {
-			GenericComponentRefMut::RootComponent(c) => c.children_mut(),
-			GenericComponentRefMut::CounterComponent(c) => c.children_mut(),
-		}
-	}
-
-	fn find_focus(self) -> GenericComponentRefMut<'a> {
-		match self {
-			GenericComponentRefMut::RootComponent(c) => c.find_focus(),
-			GenericComponentRefMut::CounterComponent(c) => c.find_focus(),
+			Self::RootComponent(c) => Self::handle_broadcast_event_impl(c, event),
+			Self::CounterComponent(c) => Self::handle_broadcast_event_impl(c, event),
 		}
 	}
 }
 
 trait Component
 where
-	for<'a> GenericComponentRef<'a>: From<&'a Self>,
-	for<'a> GenericComponentRefMut<'a>: From<&'a mut Self>,
+	Ref: From<*mut Self>,
 {
 	/// Handle app event
-	fn handle_event(&mut self, event: &AppEvent) -> EventFlow {
+	fn handle_event(&mut self, event: &Event) -> EventFlow {
 		let _ = event;
 		EventFlow::Propagate
 	}
 
 	/// Handle broadcast app event
-	fn handle_broadcast(&mut self, event: &AppEvent) {
+	fn handle_broadcast(&mut self, event: &Event) {
 		let _ = self.handle_event(event);
 	}
 
 	/// Returns a slice of this component's child components
-	fn children<'a>(&self) -> &[GenericComponentRef<'a>] {
-		&[]
-	}
-
-	/// Returns a slice of this component's child components
-	fn children_mut<'a>(&self) -> &[GenericComponentRefMut<'a>] {
-		&[]
+	fn children(&mut self) -> impl Iterator<Item = Ref> {
+		std::iter::empty()
 	}
 
 	/// Returns the child component to follow in order to get to the focussed component
-	///
-	/// Return reference to self if this is the focussed component
-	fn find_focus<'a>(&'a mut self) -> GenericComponentRefMut<'a> {
-		GenericComponentRefMut::from(self)
+	fn follow_focus<'a>(&'a mut self) -> FollowResult {
+		FollowResult::Consume
 	}
 
-	/// Returns the bounding area of this component
-	///
-	/// If this returns `None`, the area will be the same as the parent component's
-	fn area(&self) -> Option<Rect> {
-		None
-	}
-
-	/// Returns the click box of this component
-	///
-	/// If this returns `None`, the click box will be the same as the parent component's
-	/// A return value `Some(Rect::ZERO)` may be used to disable click behaviour on this component
-	fn click_box(&self) -> Option<Rect> {
-		self.area()
+	/// Returns the child component to follow in order to get to the focussed component
+	fn follow_click<'a>(&'a mut self, x: u16, y: u16) -> FollowResult {
+		let _ = x;
+		let _ = y;
+		FollowResult::Consume
 	}
 }
 
 #[derive(Debug)]
-pub struct ComponentSystem<C>
-where
-	for<'a> GenericComponentRef<'a>: From<&'a C>,
-	for<'a> GenericComponentRefMut<'a>: From<&'a mut C>,
-{
+pub struct ComponentSystem<C> {
 	root: C,
 }
 
+#[allow(private_bounds)]
 impl<C> ComponentSystem<C>
 where
-	for<'a> GenericComponentRef<'a>: From<&'a C>,
-	for<'a> GenericComponentRefMut<'a>: From<&'a mut C>,
+	Ref: From<*mut C>,
 {
 	pub fn new(root_component: C) -> ComponentSystem<C> {
 		ComponentSystem {
@@ -133,24 +121,17 @@ where
 		}
 	}
 
-	pub fn handle_event(&mut self, event: &Event) -> Option<&AppEvent> {
-		match event {
-			Event::Crossterm(event) => {
+	pub fn handle_event(&mut self, ed: &EventDispatch) -> EventFlow {
+		match ed.dispatch() {
+			Dispatch::System => {
 				// TODO: handle terminal event
-				None
+				EventFlow::Propagate
 			}
-			Event::Input(event) => {
-				todo!()
-				//Some(event) if propagated
-			}
-			Event::Broadcast(event) => {
-				// TODO: handle broadcast
-				None
+			Dispatch::Input => Ref::from(&mut self.root).handle_input_event(ed.event()),
+			Dispatch::Broadcast => {
+				Ref::from(&mut self.root).handle_broadcast_event(ed.event());
+				EventFlow::Propagate
 			}
 		}
-	}
-
-	fn handle_input_event(c: GenericComponentRefMut, event: &AppEvent) -> bool {
-		todo!()
 	}
 }
