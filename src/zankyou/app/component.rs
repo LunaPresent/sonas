@@ -1,4 +1,5 @@
 use derive_more::From;
+use ratatui::{DefaultTerminal, widgets::WidgetRef};
 
 use crate::event::{Dispatch, Event, EventDispatch};
 pub use counter::CounterComponent;
@@ -114,6 +115,7 @@ pub struct ComponentSystem<C> {
 impl<C> ComponentSystem<C>
 where
 	Ref: From<*mut C>,
+	C: WidgetRef,
 {
 	pub fn new(root_component: C) -> ComponentSystem<C> {
 		ComponentSystem {
@@ -133,5 +135,10 @@ where
 				EventFlow::Propagate
 			}
 		}
+	}
+
+	pub fn draw(&self, terminal: &mut DefaultTerminal) -> color_eyre::Result<()> {
+		terminal.draw(|frame| frame.render_widget(&self.root, frame.area()))?;
+		Ok(())
 	}
 }

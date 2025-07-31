@@ -33,7 +33,7 @@ impl App {
 
 	pub async fn run(mut self, mut terminal: DefaultTerminal) -> color_eyre::Result<()> {
 		while !self.should_quit {
-			terminal.draw(|frame| frame.render_widget(&self, frame.area()))?;
+			self.components.draw(&mut terminal)?;
 			let ed = self.events.next().await?;
 			self.handle_event(ed);
 		}
@@ -66,8 +66,8 @@ impl App {
 				Some(AppEvent::Quit)
 			}
 			KeyCode::Esc | KeyCode::Char('q') => Some(AppEvent::Quit),
-			KeyCode::Right => Some(AppEvent::Increment),
-			KeyCode::Left => Some(AppEvent::Decrement),
+			KeyCode::Char('k') => Some(AppEvent::Increment),
+			KeyCode::Char('j') => Some(AppEvent::Decrement),
 			_ => None,
 		}
 	}
