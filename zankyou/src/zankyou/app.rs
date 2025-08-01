@@ -1,27 +1,30 @@
-use crate::{
-	app::component::{ComponentSystem, EventFlow, RootComponent},
-	event::{AppEvent, Dispatch, Event, EventDispatch, EventQueue},
-};
-use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
-use ratatui::DefaultTerminal;
-
+mod app_event;
 mod component;
+
+use color_eyre::eyre;
+use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
+
+use crate::{
+	ecs::ComponentSystem,
+	event::{AppEvent as _, Dispatch, Event, EventDispatch, EventQueue},
+	tui::Tui,
+};
+use app_event::AppEvent;
+use component::GenericComponent;
 
 #[derive(Debug)]
 pub struct App {
 	pub should_quit: bool,
-	pub counter: u8,
-	pub events: EventQueue,
-	pub components: ComponentSystem<RootComponent>,
+	pub events: EventQueue<AppEvent>,
+	pub ecs: ComponentSystem<GenericComponent, AppEvent>,
 }
 
 impl Default for App {
 	fn default() -> Self {
 		Self {
 			should_quit: false,
-			counter: 0,
 			events: EventQueue::new(),
-			components: ComponentSystem::new(RootComponent::default()),
+			ecs: ComponentSystem::new(),
 		}
 	}
 }
@@ -31,43 +34,49 @@ impl App {
 		Self::default()
 	}
 
-	pub async fn run(mut self, mut terminal: DefaultTerminal) -> color_eyre::Result<()> {
+	pub async fn run(mut self) -> eyre::Result<()> {
+		let mut tui = Tui::new()?;
+		tui.enter()?;
 		while !self.should_quit {
-			self.components.draw(&mut terminal)?;
 			let ed = self.events.next().await?;
-			self.handle_event(ed);
+			self.handle_event(&mut tui, ed)?;
+		}
+		tui.exit()?;
+		Ok(())
+	}
+
+	fn handle_event(&mut self, tui: &mut Tui, ed: EventDispatch<AppEvent>) -> eyre::Result<()> {
+		if let Some(event) = self.ecs.handle_event(ed)? {
+			match event {
+				Event::Tick => {
+					tui.draw(|frame| self.ecs.draw(frame))?;
+				}
+				Event::Key(key_event) => {
+					if let Some(event) = self.map_key_events(key_event) {
+						self.handle_event(
+							tui,
+							EventDispatch {
+								dispatch: Dispatch::Input,
+								event,
+							},
+						)?;
+					}
+				}
+				Event::App(app_event) if app_event.is_quit() => self.should_quit = true,
+				_ => (),
+			}
 		}
 		Ok(())
 	}
 
-	fn handle_event(&mut self, ed: EventDispatch) {
-		if self.components.handle_event(&ed) == EventFlow::Propagate {
-			match ed.event() {
-				Event::Crossterm(event) => match *event {
-					crossterm::event::Event::Key(key_event) => {
-						if let Some(event) = self.map_key_events(key_event) {
-							self.handle_event(EventDispatch::new(
-								Dispatch::Input,
-								Event::AppEvent(event),
-							));
-						}
-					}
-					_ => (),
-				},
-				Event::AppEvent(AppEvent::Quit) => self.should_quit = true,
-				_ => (),
-			}
-		}
-	}
-
-	fn map_key_events(&mut self, key_event: KeyEvent) -> Option<AppEvent> {
+	fn map_key_events(&mut self, key_event: KeyEvent) -> Option<Event<AppEvent>> {
 		match key_event.code {
 			KeyCode::Char('c' | 'C') if key_event.modifiers == KeyModifiers::CONTROL => {
-				Some(AppEvent::Quit)
+				Some(Event::App(AppEvent::Quit))
 			}
-			KeyCode::Esc | KeyCode::Char('q') => Some(AppEvent::Quit),
-			KeyCode::Char('k') => Some(AppEvent::Increment),
-			KeyCode::Char('j') => Some(AppEvent::Decrement),
+			KeyCode::Esc | KeyCode::Char('q') => Some(Event::App(AppEvent::Quit)),
+			KeyCode::Char('k') => Some(Event::App(AppEvent::Increment)),
+			KeyCode::Char('j') => Some(Event::App(AppEvent::Decrement)),
 			_ => None,
 		}
 	}

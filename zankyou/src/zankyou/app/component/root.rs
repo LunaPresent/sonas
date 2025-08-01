@@ -1,29 +1,52 @@
+use bevy_ecs::{
+	entity::Entity,
+	system::{EntityCommands, Query},
+};
 use ratatui::{
 	buffer::Buffer,
 	layout::{Alignment, Constraint, Layout, Rect},
 	style::{Color, Stylize as _},
-	widgets::{Block, BorderType, Paragraph, Widget as _, WidgetRef},
+	widgets::{Block, BorderType, Paragraph, Widget as _},
 };
 
-use crate::app::component::{Component, CounterComponent, Ref};
+use crate::{
+	app::app_event::AppEvent,
+	ecs::{Area, EntityCommandsExt as _, UiComponent, Viewport},
+};
 
-#[derive(Debug, Default)]
+use super::{GenericComponent, click::ClickComponent, counter::CounterComponent};
+
+#[derive(Debug)]
 pub struct RootComponent {
-	counter: CounterComponent,
+	counter: Entity,
+	click: Entity,
 }
 
-impl Component for RootComponent {
-	fn children(&mut self) -> impl Iterator<Item = Ref> {
-		std::iter::once(Ref::from(&mut self.counter as *mut _))
-	}
-
-	fn follow_focus<'a>(&'a mut self) -> super::FollowResult {
-		super::FollowResult::Propagate(Ref::from(&mut self.counter as *mut _))
+impl Default for RootComponent {
+	fn default() -> Self {
+		Self {
+			counter: Entity::PLACEHOLDER,
+			click: Entity::PLACEHOLDER,
+		}
 	}
 }
 
-impl WidgetRef for RootComponent {
-	fn render_ref(&self, area: Rect, buf: &mut Buffer) {
+impl UiComponent<AppEvent> for RootComponent {
+	fn init(&mut self, mut cmd: EntityCommands) {
+		self.counter = cmd
+			.spawn_child(GenericComponent::from(CounterComponent::default()))
+			.id();
+		self.click = cmd
+			.spawn_child(GenericComponent::from(ClickComponent::default()))
+			.id();
+	}
+
+	fn render(
+		&self,
+		area: Rect,
+		buf: &mut Buffer,
+		mut children: Query<(&mut Area, Option<&mut Viewport>)>,
+	) {
 		let block = Block::bordered()
 			.title("event-driven-async-generated")
 			.title_alignment(Alignment::Center)
@@ -42,9 +65,15 @@ impl WidgetRef for RootComponent {
 
 		paragraph.render(area, buf);
 
-		let [counter_area] = Layout::vertical([Constraint::Length(1)])
-			.margin(3)
-			.areas(inner);
-		self.counter.render_ref(counter_area, buf);
+		let [counter_area, click_area] =
+			Layout::vertical([Constraint::Length(1), Constraint::Length(25)])
+				.margin(3)
+				.areas(inner);
+		if let Ok((mut area, _)) = children.get_mut(self.counter) {
+			area.0 = counter_area;
+		}
+		if let Ok((mut area, _)) = children.get_mut(self.click) {
+			area.0 = click_area;
+		}
 	}
 }

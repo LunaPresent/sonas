@@ -29,7 +29,15 @@ path = "src/zankyouctl/main.rs"
 [dependencies]
 zankyou-macros.workspace = true
 zankyou-parser.workspace = true
-clap = { version = "4.5.41", features = ["derive", "cargo", "wrap_help", "unicode", "string", "unstable-styles"] }
+bevy_ecs = "0.16.1"
+clap = { version = "4.5.41", features = [
+    "derive",
+    "cargo",
+    "wrap_help",
+    "unicode",
+    "string",
+    "unstable-styles",
+] }
 color-eyre = "0.6.5"
 crossterm = { version = "0.29.0", features = ["event-stream"] }
 derive_more = { version = "2.0.1", features = ["from"] }
@@ -39,6 +47,7 @@ interprocess = { version = "2.2.3", features = ["tokio"] }
 ratatui = "0.29.0"
 serde = { version = "1.0.219", features = ["derive"] }
 serde_json = "1.0.141"
+signal-hook = "0.3.18"
 strum = { version = "0.27.2", features = ["derive"] }
 tokio = { version = "1.46.1", features = ["full"] }
 tokio-util = "0.7.15"
