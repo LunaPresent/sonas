@@ -44,7 +44,7 @@ pub fn derive_command_category(input: TokenStream) -> TokenStream {
 	expanded.into()
 }
 
-#[proc_macro_derive(Subcommand, attributes(default))]
+#[proc_macro_derive(Subcommand, attributes(fallback_to_default))]
 pub fn derive_subcommand(input: TokenStream) -> TokenStream {
 	let input = parse_macro_input!(input as DeriveInput);
 
@@ -72,10 +72,26 @@ pub fn derive_subcommand(input: TokenStream) -> TokenStream {
 				let field_type = field.ty.to_token_stream().to_string();
 				let is_optional = field_type.starts_with("Option <");
 
+				let field_attrs = field
+					.attrs
+					.iter()
+					.map(|attr| attr.meta.to_token_stream().to_string())
+					.collect::<Vec<_>>();
+
 				if is_optional {
 					Some(quote! { #field_ident: args.get_optional(#field_name)?, })
 				} else {
-					Some(quote! { #field_ident: args.get(#field_name)?, })
+					if field_attrs.contains(&"fallback_to_default".to_string()) {
+						Some(quote! {
+							#field_ident: match args.get(#field_name) {
+								Ok(result) => Ok(result),
+								Err(ParseCommandError::MissingArgument(_)) => Ok(Default::default()),
+								error => error,
+							}?,
+						})
+					} else {
+						Some(quote! { #field_ident: args.get(#field_name)?, })
+					}
 				}
 			});
 

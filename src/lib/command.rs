@@ -8,12 +8,18 @@ pub enum Command {
 
 #[derive(Debug, Clone, Eq, PartialEq, Subcommand)]
 pub enum AlbumCommand {
-	List { sort: Option<SortDirection> },
-	ListTracks { id: usize },
+	List {
+		#[fallback_to_default]
+		sort: SortDirection,
+	},
+	ListTracks {
+		id: usize,
+	},
 }
 
-#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+#[derive(Debug, Clone, Copy, Eq, PartialEq, Default)]
 pub enum SortDirection {
+	#[default]
 	Ascending,
 	Descending,
 }
@@ -40,14 +46,18 @@ mod tests {
 	#[test]
 	fn it_works() {
 		let command = "album list".parse::<Command>().unwrap();
-		assert_eq!(command, Command::Album(AlbumCommand::List { sort: None }));
-
-		let command = "album list sort=desc".parse::<Command>().unwrap();
-
 		assert_eq!(
 			command,
 			Command::Album(AlbumCommand::List {
-				sort: Some(SortDirection::Descending)
+				sort: SortDirection::Ascending
+			})
+		);
+
+		let command = "album list sort=desc".parse::<Command>().unwrap();
+		assert_eq!(
+			command,
+			Command::Album(AlbumCommand::List {
+				sort: SortDirection::Descending
 			})
 		);
 
