@@ -9,7 +9,7 @@ pub enum Command {
 #[derive(Debug, Clone, Eq, PartialEq, Subcommand)]
 pub enum AlbumCommand {
 	List {
-		#[fallback_to_default]
+		#[default(SortDirection::Descending)]
 		sort: SortDirection,
 	},
 	ListTracks {
@@ -49,7 +49,7 @@ mod tests {
 		assert_eq!(
 			command,
 			Command::Album(AlbumCommand::List {
-				sort: SortDirection::Ascending
+				sort: SortDirection::Descending
 			})
 		);
 

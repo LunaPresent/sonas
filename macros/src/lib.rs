@@ -44,7 +44,7 @@ pub fn derive_command_category(input: TokenStream) -> TokenStream {
 	expanded.into()
 }
 
-#[proc_macro_derive(Subcommand, attributes(fallback_to_default))]
+#[proc_macro_derive(Subcommand, attributes(fallback_to_default, default))]
 pub fn derive_subcommand(input: TokenStream) -> TokenStream {
 	let input = parse_macro_input!(input as DeriveInput);
 
@@ -89,6 +89,21 @@ pub fn derive_subcommand(input: TokenStream) -> TokenStream {
 								error => error,
 							}?,
 						})
+					} else if let Some(attr) = field_attrs
+						.iter()
+						.find(|&name| name.starts_with("default("))
+					{
+						let value = syn::parse_str::<syn::Path>(
+							attr.strip_prefix("default(")
+								.and_then(|string| string.strip_suffix(")"))
+								.expect("expected default value"),
+						)
+						.unwrap()
+						.to_token_stream();
+
+						Some(
+							quote! { #field_ident: args.get_optional(#field_name)?.unwrap_or(#value), },
+						)
 					} else {
 						Some(quote! { #field_ident: args.get(#field_name)?, })
 					}
