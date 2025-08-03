@@ -15,12 +15,6 @@ pub enum ParseCommandError {
 }
 
 #[derive(Debug, Clone)]
-pub struct ArgumentParser {
-	required: &'static [&'static str],
-	optional: &'static [&'static str],
-}
-
-#[derive(Debug, Clone)]
 pub struct Arguments<'a> {
 	values: HashMap<&'a str, &'a str>,
 }
@@ -31,37 +25,8 @@ impl<'a> From<HashMap<&'a str, &'a str>> for Arguments<'a> {
 	}
 }
 
-impl Arguments<'_> {
-	pub fn get<T: FromStr>(&self, name: &str) -> Result<T, ParseCommandError> {
-		if let Some(&value) = self.values.get(name) {
-			value
-				.parse()
-				.map_err(|_| ParseCommandError::InvalidArgument(name.to_string()))
-		} else {
-			Err(ParseCommandError::MissingArgument(name.to_string()))
-		}
-	}
-}
-
-impl ArgumentParser {
-	pub fn new() -> Self {
-		Self {
-			required: &[],
-			optional: &[],
-		}
-	}
-
-	pub fn required(mut self, values: &'static [&'static str]) -> Self {
-		self.required = values;
-		self
-	}
-
-	pub fn optional(mut self, values: &'static [&'static str]) -> Self {
-		self.optional = values;
-		self
-	}
-
-	pub fn parse(self, string: &str) -> Result<Arguments, ParseCommandError> {
+impl<'a> Arguments<'a> {
+	pub fn parse(string: &'a str, options: &[&str]) -> Result<Self, ParseCommandError> {
 		let mut result = HashMap::new();
 
 		for arg in string.trim().split(' ').filter(|s| !s.is_empty()) {
@@ -76,18 +41,31 @@ impl ArgumentParser {
 			result.insert(key, value);
 		}
 
-		for required in self.required {
-			if !result.contains_key(required) {
-				return Err(ParseCommandError::MissingArgument(required.to_string()));
-			}
-		}
-
 		for key in result.keys() {
-			if !self.required.contains(key) && !self.optional.contains(key) {
+			if !options.contains(key) {
 				return Err(ParseCommandError::UnexpectedArgument(key.to_string()));
 			}
 		}
 
 		Ok(result.into())
+	}
+
+	pub fn get<T: FromStr>(&self, name: &str) -> Result<T, ParseCommandError> {
+		let Ok(Some(value)) = self.get_optional(name) else {
+			return Err(ParseCommandError::MissingArgument(name.to_string()));
+		};
+
+		Ok(value)
+	}
+
+	pub fn get_optional<T: FromStr>(&self, name: &str) -> Result<Option<T>, ParseCommandError> {
+		let Some(value) = self.values.get(name) else {
+			return Ok(None);
+		};
+
+		value
+			.parse()
+			.map_err(|_| ParseCommandError::InvalidArgument(name.to_string()))
+			.map(Some)
 	}
 }

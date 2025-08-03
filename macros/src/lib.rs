@@ -1,6 +1,6 @@
 use convert_case::{Case, Casing};
 use proc_macro::TokenStream;
-use quote::{format_ident, quote};
+use quote::{ToTokens, format_ident, quote};
 use syn::{Data, DeriveInput, parse_macro_input};
 
 #[proc_macro_derive(CommandCategory)]
@@ -44,7 +44,7 @@ pub fn derive_command_category(input: TokenStream) -> TokenStream {
 	expanded.into()
 }
 
-#[proc_macro_derive(Subcommand)]
+#[proc_macro_derive(Subcommand, attributes(default))]
 pub fn derive_subcommand(input: TokenStream) -> TokenStream {
 	let input = parse_macro_input!(input as DeriveInput);
 
@@ -58,31 +58,39 @@ pub fn derive_subcommand(input: TokenStream) -> TokenStream {
 		let ident = format_ident!("{}", variant.ident);
 		let name = variant.ident.to_string().to_case(Case::Kebab);
 
-		let fields = variant
-			.fields
-			.iter()
-			.filter_map(|field| field.ident.as_ref().map(|ident| format_ident!("{}", ident)));
-
-		let field_strings = fields
-			.clone()
-			.map(|field| field.to_string().to_case(Case::Kebab));
-
-		// Borrow checker strikes again
-		let strings2 = field_strings.clone();
-
 		let constructor = if variant.fields.is_empty() {
 			quote! { Self::#ident }
 		} else {
-			quote! {
-				Self::#ident {
-					#(#fields: args.get(#field_strings)?),*
+			let field_initializers = variant.fields.iter().filter_map(|field| {
+				let Some(field_ident) =
+					field.ident.as_ref().map(|ident| format_ident!("{}", ident))
+				else {
+					return None;
+				};
+
+				let field_name = field_ident.to_string().to_case(Case::Kebab);
+				let field_type = field.ty.to_token_stream().to_string();
+				let is_optional = field_type.starts_with("Option <");
+
+				if is_optional {
+					Some(quote! { #field_ident: args.get_optional(#field_name)?, })
+				} else {
+					Some(quote! { #field_ident: args.get(#field_name)?, })
 				}
-			}
+			});
+
+			quote! { Self::#ident { #(#field_initializers)* } }
 		};
+
+		let field_strings = variant
+			.fields
+			.iter()
+			.filter_map(|field| field.ident.as_ref().map(|ident| format_ident!("{}", ident)))
+			.map(|field_name| field_name.to_string().to_case(Case::Kebab));
 
 		quote! {
 			#name => {
-				let args = ArgumentParser::new().required(&[#(#strings2),*]).parse(rest)?;
+				let args = Arguments::parse(rest, &[#(#field_strings),*])?;
 				Ok(#constructor)
 			}
 		}

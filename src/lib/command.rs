@@ -1,4 +1,5 @@
 use macros::{CommandCategory, Subcommand};
+use std::str::FromStr;
 
 #[derive(Debug, Clone, Eq, PartialEq, CommandCategory)]
 pub enum Command {
@@ -7,8 +8,29 @@ pub enum Command {
 
 #[derive(Debug, Clone, Eq, PartialEq, Subcommand)]
 pub enum AlbumCommand {
-	List,
+	List { sort: Option<SortDirection> },
 	ListTracks { id: usize },
+}
+
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+pub enum SortDirection {
+	Ascending,
+	Descending,
+}
+
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub struct UnknownSortDirectionError(String);
+
+impl FromStr for SortDirection {
+	type Err = UnknownSortDirectionError;
+
+	fn from_str(s: &str) -> Result<Self, Self::Err> {
+		match s.to_lowercase() {
+			x if x == "a" || x == "asc" || x == "ascending" => Ok(Self::Ascending),
+			x if x == "d" || x == "desc" || x == "descending" => Ok(Self::Descending),
+			other => Err(UnknownSortDirectionError(other)),
+		}
+	}
 }
 
 #[cfg(test)]
@@ -18,7 +40,16 @@ mod tests {
 	#[test]
 	fn it_works() {
 		let command = "album list".parse::<Command>().unwrap();
-		assert_eq!(command, Command::Album(AlbumCommand::List));
+		assert_eq!(command, Command::Album(AlbumCommand::List { sort: None }));
+
+		let command = "album list sort=desc".parse::<Command>().unwrap();
+
+		assert_eq!(
+			command,
+			Command::Album(AlbumCommand::List {
+				sort: Some(SortDirection::Descending)
+			})
+		);
 
 		let command = "album list-tracks id=5".parse::<Command>().unwrap();
 		assert_eq!(command, Command::Album(AlbumCommand::ListTracks { id: 5 }));
