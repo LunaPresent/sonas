@@ -2,6 +2,9 @@
 resolver = "3"
 members = ["macros", "parser"]
 
+[workspace.dependencies]
+thiserror = "2.0.12"
+
 [package]
 name = "zankyou"
 version = "0.1.0"
