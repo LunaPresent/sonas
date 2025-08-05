@@ -72,7 +72,7 @@ jobs:
       uses: taiki-e/upload-rust-binary-action@v1
       with:
         archive: zankyou-$tag-${{ matrix.name }}
-        bin: zankyou,zankyou-server
+        bin: zankyou,zankyoud,zankyouctl
         target: ${{ matrix.target }}
         tar: unix
         zip: windows

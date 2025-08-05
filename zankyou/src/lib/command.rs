@@ -1,5 +1,5 @@
-use macros::{CommandCategory, Subcommand};
 use std::str::FromStr;
+use zankyou_macros::{CommandCategory, Subcommand};
 
 #[derive(Debug, Clone, Eq, PartialEq, CommandCategory)]
 pub enum Command {

@@ -1,7 +1,7 @@
 use convert_case::{Case, Casing};
 use proc_macro::TokenStream;
-use quote::{ToTokens, format_ident, quote};
-use syn::{Data, DeriveInput, parse_macro_input};
+use quote::{format_ident, quote, ToTokens};
+use syn::{parse_macro_input, Data, DeriveInput};
 
 #[proc_macro_derive(CommandCategory)]
 pub fn derive_command_category(input: TokenStream) -> TokenStream {
@@ -22,10 +22,10 @@ pub fn derive_command_category(input: TokenStream) -> TokenStream {
 
 	let expanded = quote! {
 		impl std::str::FromStr for #ident {
-			type Err = ::parser::ParseCommandError;
+			type Err = ::zankyou_parser::ParseCommandError;
 
 			fn from_str(string: &str) -> Result<Self, Self::Err> {
-				use ::parser::*;
+				use ::zankyou_parser::*;
 
 				let (category, rest) = match string.trim().split_once(' ') {
 					Some((category, rest)) => (category, rest),
@@ -129,10 +129,10 @@ pub fn derive_subcommand(input: TokenStream) -> TokenStream {
 
 	let expanded = quote! {
 		impl std::str::FromStr for #ident {
-			type Err = ::parser::ParseCommandError;
+			type Err = ::zankyou_parser::ParseCommandError;
 
 			fn from_str(string: &str) -> Result<Self, Self::Err> {
-				use ::parser::*;
+				use ::zankyou_parser::*;
 
 				let (subcommand, rest) = match string.split_once(' ') {
 					Some((subcommand, rest)) => (subcommand, rest),
