@@ -5,7 +5,8 @@ use tokio::sync::mpsc;
 
 use super::{Dispatch, Event, EventDispatch, EventSender};
 
-const TICK_FPS: f64 = 30.0;
+const TPS: f64 = 8.0;
+const FPS: f64 = 30.0;
 
 pub struct EventTask<E> {
 	sender: mpsc::UnboundedSender<EventDispatch<E>>,
@@ -21,20 +22,23 @@ impl<E> EventTask<E> {
 	///
 	/// This function emits tick events at a fixed rate and polls for crossterm events in between.
 	pub async fn run(self) -> color_eyre::Result<()> {
-		let tick_rate = Duration::from_secs_f64(1.0 / TICK_FPS);
-		let mut reader = crossterm::event::EventStream::new();
-		let mut tick = tokio::time::interval(tick_rate);
+		let tick_rate = Duration::from_secs_f64(1.0 / TPS);
+		let frame_rate = Duration::from_secs_f64(1.0 / FPS);
+		let mut crossterm_events = crossterm::event::EventStream::new();
+		let mut tick_interval = tokio::time::interval(tick_rate);
+		let mut render_interval = tokio::time::interval(frame_rate);
 		loop {
-			let tick_delay = tick.tick();
-			let crossterm_event = reader.next().fuse();
 			tokio::select! {
 				_ = self.sender.closed() => {
 					break;
 				}
-				_ = tick_delay => {
+				_ = tick_interval.tick() => {
 					self.send(Dispatch::Broadcast, Event::Tick);
 				}
-				Some(Ok(evt)) = crossterm_event => {
+				_ = render_interval.tick() => {
+					self.send(Dispatch::Broadcast, Event::Render);
+				}
+				Some(Ok(evt)) = crossterm_events.next().fuse() => {
 					self.handle_crossterm_event(evt);
 				}
 			};

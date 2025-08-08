@@ -26,28 +26,6 @@ pub struct Focus {
 	pub target: Entity,
 }
 
-fn bubble_event<C, E>(
-	target: Entity,
-	event: Event<E>,
-	parents: Query<&ChildOf>,
-	mut components: Query<&mut C>,
-	mut commands: Commands,
-) -> Option<Event<E>>
-where
-	C: UiComponent<E> + Component<Mutability = Mutable>,
-	E: Send + Sync + Clone + 'static,
-{
-	for target in iter::once(target).chain(parents.iter_ancestors(target)) {
-		let cmd = commands.entity(target);
-		if let Ok(mut component) = components.get_mut(target) {
-			if component.handle_event(cmd, &event) == EventFlow::Consume {
-				return None;
-			}
-		}
-	}
-	Some(event)
-}
-
 pub fn handle_input_event<C, E>(
 	In(event): In<Event<E>>,
 	focus: Res<Focus>,
@@ -62,25 +40,19 @@ where
 	bubble_event(focus.target, event, parents, components, commands)
 }
 
-pub fn find_cursor_target(
-	entity: Entity,
-	x: u16,
-	y: u16,
-	areas: Query<&Area>,
-	children: Query<&Children>,
-) -> Entity {
-	for child in children
-		.get(entity)
-		.into_iter()
-		.flat_map(RelationshipTarget::iter)
-	{
-		if let Ok(area) = areas.get(child)
-			&& area.0.contains(Position { x, y })
-		{
-			return find_cursor_target(child, x, y, areas, children);
-		}
+pub fn handle_broadcast_event<C, E>(
+	In(event): In<Event<E>>,
+	components: Query<(&mut C, Entity)>,
+	mut commands: Commands,
+) -> Event<E>
+where
+	C: UiComponent<E> + Component<Mutability = Mutable>,
+	E: Send + Sync + Clone + 'static,
+{
+	for (mut component, entity) in components {
+		component.handle_event(commands.entity(entity), &event);
 	}
-	entity
+	event
 }
 
 pub fn handle_mouse_event<C, E>(
@@ -112,4 +84,60 @@ where
 	}
 
 	target.and_then(|t| bubble_event(t, event, parents, components, commands))
+}
+
+pub fn handle_target_event<C, E>(
+	(In(event), In(target)): (In<Event<E>>, In<Entity>),
+	parents: Query<&ChildOf>,
+	components: Query<&mut C>,
+	commands: Commands,
+) -> Option<Event<E>>
+where
+	C: UiComponent<E> + Component<Mutability = Mutable>,
+	E: Send + Sync + Clone + 'static,
+{
+	bubble_event(target, event, parents, components, commands)
+}
+
+fn bubble_event<C, E>(
+	target: Entity,
+	event: Event<E>,
+	parents: Query<&ChildOf>,
+	mut components: Query<&mut C>,
+	mut commands: Commands,
+) -> Option<Event<E>>
+where
+	C: UiComponent<E> + Component<Mutability = Mutable>,
+	E: Send + Sync + Clone + 'static,
+{
+	for target in iter::once(target).chain(parents.iter_ancestors(target)) {
+		let cmd = commands.entity(target);
+		if let Ok(mut component) = components.get_mut(target) {
+			if component.handle_event(cmd, &event) == EventFlow::Consume {
+				return None;
+			}
+		}
+	}
+	Some(event)
+}
+
+fn find_cursor_target(
+	entity: Entity,
+	x: u16,
+	y: u16,
+	areas: Query<&Area>,
+	children: Query<&Children>,
+) -> Entity {
+	for child in children
+		.get(entity)
+		.into_iter()
+		.flat_map(RelationshipTarget::iter)
+	{
+		if let Ok(area) = areas.get(child)
+			&& area.0.contains(Position { x, y })
+		{
+			return find_cursor_target(child, x, y, areas, children);
+		}
+	}
+	entity
 }

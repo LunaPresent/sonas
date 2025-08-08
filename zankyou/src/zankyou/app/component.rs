@@ -4,8 +4,7 @@ mod root;
 
 use bevy_ecs::{
 	component::Component,
-	entity::Entity,
-	system::{Commands, EntityCommands, Query},
+	system::{EntityCommands, Query},
 };
 use derive_more::From;
 use ratatui::{buffer::Buffer, layout::Rect};

@@ -18,7 +18,14 @@ pub struct EventDispatch<E> {
 pub enum Dispatch {
 	Input,
 	Broadcast,
-	Cursor { x: u16, y: u16 },
+	Cursor {
+		x: u16,
+		y: u16,
+	},
+	#[allow(
+		dead_code,
+		reason = "this is not constructed by system events, but may be used in app logic"
+	)]
 	Target(Entity),
 }
 
@@ -29,11 +36,17 @@ pub trait AppEvent {
 #[derive(Debug, Clone)]
 pub enum Event<E> {
 	Tick,
+	Render,
 	App(E),
 	FocusGained,
 	FocusLost,
 	Key(KeyEvent),
 	Mouse(MouseEvent),
+	#[allow(dead_code, reason = "inner value to be used by app logic")]
 	Paste(String),
-	Resize { width: u16, height: u16 },
+	#[allow(dead_code, reason = "inner value to be used by app logic")]
+	Resize {
+		width: u16,
+		height: u16,
+	},
 }

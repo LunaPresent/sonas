@@ -6,7 +6,9 @@ mod ui_component;
 
 pub use entity_commands_ext::EntityCommandsExt;
 pub use event_handling::{EventFlow, Focus};
-use event_handling::{handle_input_event, handle_mouse_event};
+use event_handling::{
+	handle_broadcast_event, handle_input_event, handle_mouse_event, handle_target_event,
+};
 use init::init_components;
 pub use rendering::{Area, Viewport};
 pub use ui_component::UiComponent;
@@ -59,12 +61,17 @@ where
 			Dispatch::Input => Ok(self
 				.world
 				.run_system_once_with(handle_input_event::<C, _>, ed.event)?),
-			Dispatch::Broadcast => Ok(Some(ed.event)), // TODO: implement this but I really wanna test rn
+			Dispatch::Broadcast => Ok(Some(
+				self.world
+					.run_system_once_with(handle_broadcast_event::<C, _>, ed.event)?,
+			)),
 			Dispatch::Cursor { x, y } => Ok(self.world.run_system_cached_with(
 				handle_mouse_event::<C, _>,
 				(ed.event, self.root_entity, x, y),
 			)?),
-			Dispatch::Target(entity) => todo!(),
+			Dispatch::Target(target) => Ok(self
+				.world
+				.run_system_once_with(handle_target_event::<C, _>, (ed.event, target))?),
 		}
 	}
 
