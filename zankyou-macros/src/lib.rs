@@ -62,12 +62,10 @@ pub fn derive_subcommand(input: TokenStream) -> TokenStream {
 			quote! { Self::#ident }
 		} else {
 			let field_initializers = variant.fields.iter().filter_map(|field| {
-				let Some(field_ident) =
-					field.ident.as_ref().map(|ident| format_ident!("{}", ident))
-				else {
-					return None;
-				};
-
+				let field_ident = field
+					.ident
+					.as_ref()
+					.map(|ident| format_ident!("{}", ident))?;
 				let field_name = field_ident.to_string().to_case(Case::Kebab);
 				let field_type = field.ty.to_token_stream().to_string();
 				let is_optional = field_type.starts_with("Option <");
@@ -80,33 +78,31 @@ pub fn derive_subcommand(input: TokenStream) -> TokenStream {
 
 				if is_optional {
 					Some(quote! { #field_ident: args.get_optional(#field_name)?, })
-				} else {
-					if field_attrs.contains(&"fallback_to_default".to_string()) {
-						Some(quote! {
-							#field_ident: match args.get(#field_name) {
-								Ok(result) => Ok(result),
-								Err(ParseCommandError::MissingArgument(_)) => Ok(Default::default()),
-								error => error,
-							}?,
-						})
-					} else if let Some(attr) = field_attrs
-						.iter()
-						.find(|&name| name.starts_with("default("))
-					{
-						let value = syn::parse_str::<syn::Path>(
-							attr.strip_prefix("default(")
-								.and_then(|string| string.strip_suffix(")"))
-								.expect("expected default value"),
-						)
-						.unwrap()
-						.to_token_stream();
+				} else if field_attrs.contains(&"fallback_to_default".to_string()) {
+					Some(quote! {
+						#field_ident: match args.get(#field_name) {
+							Ok(result) => Ok(result),
+							Err(ParseCommandError::MissingArgument(_)) => Ok(Default::default()),
+							error => error,
+						}?,
+					})
+				} else if let Some(attr) = field_attrs
+					.iter()
+					.find(|&name| name.starts_with("default("))
+				{
+					let value = syn::parse_str::<syn::Path>(
+						attr.strip_prefix("default(")
+							.and_then(|string| string.strip_suffix(")"))
+							.expect("expected default value"),
+					)
+					.unwrap()
+					.to_token_stream();
 
-						Some(
-							quote! { #field_ident: args.get_optional(#field_name)?.unwrap_or(#value), },
-						)
-					} else {
-						Some(quote! { #field_ident: args.get(#field_name)?, })
-					}
+					Some(
+						quote! { #field_ident: args.get_optional(#field_name)?.unwrap_or(#value), },
+					)
+				} else {
+					Some(quote! { #field_ident: args.get(#field_name)?, })
 				}
 			});
 

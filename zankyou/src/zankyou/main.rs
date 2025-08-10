@@ -15,6 +15,5 @@ async fn main() -> Result<()> {
 	color_eyre::install()?;
 	let _ = Cli::parse();
 	let app = App::new();
-	let result = app.run().await;
-	result
+	app.run().await
 }

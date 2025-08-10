@@ -49,7 +49,7 @@ fn render_recursive<C: UiComponent<E> + Component, E>(
 							);
 						}
 					}
-					combine_viewports(buf, &mut vp, area.0);
+					combine_viewports(buf, &vp, area.0);
 				}
 				Ok((area, None)) => {
 					comp.render(area.0, buf, areas.reborrow());

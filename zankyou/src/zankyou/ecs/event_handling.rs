@@ -112,10 +112,10 @@ where
 {
 	for target in iter::once(target).chain(parents.iter_ancestors(target)) {
 		let cmd = commands.entity(target);
-		if let Ok(mut component) = components.get_mut(target) {
-			if component.handle_event(cmd, &event) == EventFlow::Consume {
-				return None;
-			}
+		if let Ok(mut component) = components.get_mut(target)
+			&& component.handle_event(cmd, &event) == EventFlow::Consume
+		{
+			return None;
 		}
 	}
 	Some(event)

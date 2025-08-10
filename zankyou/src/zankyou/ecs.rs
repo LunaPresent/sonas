@@ -54,7 +54,7 @@ where
 		}
 	}
 
-	pub fn handle_event<'a>(&mut self, ed: EventDispatch<E>) -> eyre::Result<Option<Event<E>>> {
+	pub fn handle_event(&mut self, ed: EventDispatch<E>) -> eyre::Result<Option<Event<E>>> {
 		self.world.run_system_cached(init_components::<C, E>)?;
 
 		match ed.dispatch {
