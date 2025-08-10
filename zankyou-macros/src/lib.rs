@@ -1,7 +1,7 @@
 use convert_case::{Case, Casing};
 use proc_macro::TokenStream;
-use quote::{format_ident, quote, ToTokens};
-use syn::{parse_macro_input, Data, DeriveInput};
+use quote::{ToTokens, format_ident, quote};
+use syn::{Data, DeriveInput, parse_macro_input};
 
 #[proc_macro_derive(CommandCategory)]
 pub fn derive_command_category(input: TokenStream) -> TokenStream {
