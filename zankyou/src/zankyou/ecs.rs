@@ -5,7 +5,7 @@ mod rendering;
 mod ui_component;
 
 pub use entity_commands_ext::EntityCommandsExt;
-pub use event_handling::{EventFlow, Focus};
+pub use event_handling::{CursorPos, EventFlow, Focus};
 use event_handling::{
 	handle_broadcast_event, handle_input_event, handle_mouse_event, handle_target_event,
 };
@@ -45,6 +45,7 @@ where
 		world.insert_resource(Focus {
 			target: root_entity,
 		});
+		world.insert_resource(CursorPos::default());
 		world.flush();
 
 		ComponentSystem {
@@ -80,10 +81,10 @@ where
 			.run_system_cached(init_components::<C, E>)
 			.expect("Something broke while initialising comoponents");
 
-		self.world
+		**self
+			.world
 			.get_mut::<Area>(self.root_entity)
-			.expect("Root element must have an Area component")
-			.0 = frame.area();
+			.expect("Root element must have an Area component") = frame.area();
 		self.world
 			.run_system_once_with(render::<C, E>, (self.root_entity, frame.buffer_mut()))
 			.expect("Something broke while rendering");

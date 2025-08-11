@@ -1,5 +1,7 @@
-mod click;
-mod counter;
+mod control_panel;
+mod library;
+mod navbar;
+mod navbar_button;
 mod root;
 
 use bevy_ecs::{
@@ -14,16 +16,20 @@ use crate::{
 	ecs::{Area, EventFlow, UiComponent, Viewport},
 	event::Event,
 };
-use click::ClickComponent;
-use counter::CounterComponent;
+use control_panel::ControlPanelComponent;
+use library::LibraryComponent;
+use navbar::NavbarComponent;
+use navbar_button::NavbarButtonComponent;
 use root::RootComponent;
 
 #[derive(Debug, Component, From)]
 #[require(Area)]
 pub enum GenericComponent {
 	Root(RootComponent),
-	Counter(CounterComponent),
-	Click(ClickComponent),
+	ControlPanel(ControlPanelComponent),
+	Library(LibraryComponent),
+	Navbar(NavbarComponent),
+	NavbarButton(NavbarButtonComponent),
 }
 
 impl Default for GenericComponent {
@@ -36,16 +42,20 @@ impl UiComponent<AppEvent> for GenericComponent {
 	fn init(&mut self, cmd: EntityCommands) {
 		match self {
 			Self::Root(c) => c.init(cmd),
-			Self::Counter(c) => c.init(cmd),
-			Self::Click(c) => c.init(cmd),
+			Self::ControlPanel(c) => c.init(cmd),
+			Self::Library(c) => c.init(cmd),
+			Self::Navbar(c) => c.init(cmd),
+			Self::NavbarButton(c) => c.init(cmd),
 		}
 	}
 
-	fn handle_event(&mut self, cmd: EntityCommands, event: &Event<AppEvent>) -> EventFlow {
+	fn handle_event(&mut self, event: &Event<AppEvent>, cmd: EntityCommands) -> EventFlow {
 		match self {
-			Self::Root(c) => c.handle_event(cmd, event),
-			Self::Counter(c) => c.handle_event(cmd, event),
-			Self::Click(c) => c.handle_event(cmd, event),
+			Self::Root(c) => c.handle_event(event, cmd),
+			Self::ControlPanel(c) => c.handle_event(event, cmd),
+			Self::Library(c) => c.handle_event(event, cmd),
+			Self::Navbar(c) => c.handle_event(event, cmd),
+			Self::NavbarButton(c) => c.handle_event(event, cmd),
 		}
 	}
 
@@ -57,8 +67,10 @@ impl UiComponent<AppEvent> for GenericComponent {
 	) {
 		match self {
 			Self::Root(c) => c.render(area, buf, children),
-			Self::Counter(c) => c.render(area, buf, children),
-			Self::Click(c) => c.render(area, buf, children),
+			Self::ControlPanel(c) => c.render(area, buf, children),
+			Self::Library(c) => c.render(area, buf, children),
+			Self::Navbar(c) => c.render(area, buf, children),
+			Self::NavbarButton(c) => c.render(area, buf, children),
 		}
 	}
 }

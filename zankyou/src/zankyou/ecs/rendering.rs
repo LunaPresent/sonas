@@ -5,12 +5,13 @@ use bevy_ecs::{
 	query::With,
 	system::{In, InMut, Query},
 };
+use derive_more::{Deref, DerefMut};
 use ratatui::{buffer::Buffer, layout::Rect};
 
 use crate::ecs::ui_component::UiComponent;
 
-#[derive(Debug, Component, Default)]
-pub struct Area(pub Rect);
+#[derive(Debug, Component, Default, Deref, DerefMut)]
+pub struct Area(Rect);
 
 #[derive(Debug, Component, Default)]
 #[require(Area)]

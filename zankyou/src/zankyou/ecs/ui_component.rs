@@ -9,7 +9,7 @@ pub trait UiComponent<E> {
 		let _ = cmd;
 	}
 
-	fn handle_event(&mut self, cmd: EntityCommands, event: &Event<E>) -> EventFlow {
+	fn handle_event(&mut self, event: &Event<E>, cmd: EntityCommands) -> EventFlow {
 		let _ = cmd;
 		let _ = event;
 		EventFlow::Propagate
@@ -19,6 +19,6 @@ pub trait UiComponent<E> {
 		&self,
 		area: Rect,
 		buf: &mut Buffer,
-		areas: Query<(&mut Area, Option<&mut Viewport>)>,
+		children: Query<(&mut Area, Option<&mut Viewport>)>,
 	);
 }

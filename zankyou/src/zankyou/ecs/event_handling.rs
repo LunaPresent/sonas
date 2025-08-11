@@ -6,7 +6,7 @@ use bevy_ecs::{
 	hierarchy::{ChildOf, Children},
 	relationship::RelationshipTarget,
 	resource::Resource,
-	system::{Commands, In, Local, Query, Res},
+	system::{Commands, In, Local, Query, Res, ResMut},
 };
 use crossterm::event::MouseEventKind;
 use ratatui::layout::Position;
@@ -24,6 +24,21 @@ pub enum EventFlow {
 #[derive(Debug, Resource)]
 pub struct Focus {
 	pub target: Entity,
+}
+
+#[derive(Debug, Resource)]
+pub struct CursorPos {
+	pub x: u16,
+	pub y: u16,
+}
+
+impl Default for CursorPos {
+	fn default() -> Self {
+		Self {
+			x: u16::MAX,
+			y: u16::MAX,
+		}
+	}
 }
 
 pub fn handle_input_event<C, E>(
@@ -50,7 +65,7 @@ where
 	E: Send + Sync + Clone + 'static,
 {
 	for (mut component, entity) in components {
-		component.handle_event(commands.entity(entity), &event);
+		component.handle_event(&event, commands.entity(entity));
 	}
 	event
 }
@@ -58,6 +73,7 @@ where
 pub fn handle_mouse_event<C, E>(
 	(In(event), In(root), In(x), In(y)): (In<Event<E>>, In<Entity>, In<u16>, In<u16>),
 	mut clicked: Local<Option<Entity>>,
+	mut cursor_pos: ResMut<CursorPos>,
 	areas: Query<&Area>,
 	children: Query<&Children>,
 	parents: Query<&ChildOf>,
@@ -68,6 +84,9 @@ where
 	C: UiComponent<E> + Component<Mutability = Mutable>,
 	E: Send + Sync + Clone + 'static,
 {
+	cursor_pos.x = x;
+	cursor_pos.y = y;
+
 	let target = if let Event::Mouse(mouse_event) = event
 		&& let MouseEventKind::Up(_) | MouseEventKind::Drag(_) = mouse_event.kind
 	{
@@ -113,7 +132,7 @@ where
 	for target in iter::once(target).chain(parents.iter_ancestors(target)) {
 		let cmd = commands.entity(target);
 		if let Ok(mut component) = components.get_mut(target)
-			&& component.handle_event(cmd, &event) == EventFlow::Consume
+			&& component.handle_event(&event, cmd) == EventFlow::Consume
 		{
 			return None;
 		}
@@ -134,7 +153,7 @@ fn find_cursor_target(
 		.flat_map(RelationshipTarget::iter)
 	{
 		if let Ok(area) = areas.get(child)
-			&& area.0.contains(Position { x, y })
+			&& area.contains(Position { x, y })
 		{
 			return find_cursor_target(child, x, y, areas, children);
 		}

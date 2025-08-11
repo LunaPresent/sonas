@@ -1,12 +1,14 @@
+use std::ops::DerefMut;
+
 use bevy_ecs::{
 	entity::Entity,
 	system::{EntityCommands, Query},
 };
 use ratatui::{
 	buffer::Buffer,
-	layout::{Alignment, Constraint, Layout, Rect},
-	style::{Color, Stylize as _},
-	widgets::{Block, BorderType, Paragraph, Widget as _},
+	layout::{Constraint, Layout, Margin, Rect},
+	symbols,
+	widgets::{Block, BorderType, Borders, Widget as _, WidgetRef as _},
 };
 
 use crate::{
@@ -14,30 +16,35 @@ use crate::{
 	ecs::{Area, EntityCommandsExt as _, UiComponent, Viewport},
 };
 
-use super::{GenericComponent, click::ClickComponent, counter::CounterComponent};
+use super::{ControlPanelComponent, GenericComponent, LibraryComponent, NavbarComponent};
 
 #[derive(Debug)]
 pub struct RootComponent {
-	counter: Entity,
-	click: Entity,
+	control_panel: Entity,
+	nav_bar: Entity,
+	library: Entity,
 }
 
 impl Default for RootComponent {
 	fn default() -> Self {
 		Self {
-			counter: Entity::PLACEHOLDER,
-			click: Entity::PLACEHOLDER,
+			control_panel: Entity::PLACEHOLDER,
+			nav_bar: Entity::PLACEHOLDER,
+			library: Entity::PLACEHOLDER,
 		}
 	}
 }
 
 impl UiComponent<AppEvent> for RootComponent {
 	fn init(&mut self, mut cmd: EntityCommands) {
-		self.counter = cmd
-			.spawn_child(GenericComponent::from(CounterComponent::default()))
+		self.control_panel = cmd
+			.spawn_child(GenericComponent::from(ControlPanelComponent::default()))
 			.id();
-		self.click = cmd
-			.spawn_child(GenericComponent::from(ClickComponent::default()))
+		self.nav_bar = cmd
+			.spawn_child(GenericComponent::from(NavbarComponent::default()))
+			.id();
+		self.library = cmd
+			.spawn_child(GenericComponent::from(LibraryComponent::default()))
 			.id();
 	}
 
@@ -47,33 +54,52 @@ impl UiComponent<AppEvent> for RootComponent {
 		buf: &mut Buffer,
 		mut children: Query<(&mut Area, Option<&mut Viewport>)>,
 	) {
-		let block = Block::bordered()
-			.title("event-driven-async-generated")
-			.title_alignment(Alignment::Center)
+		let [browser_area, control_panel_area] =
+			Layout::vertical([Constraint::Fill(1), Constraint::Length(7)]).areas(area);
+		let [navbar_area_fixed, navbar_area_dynamic, library_area] = Layout::horizontal([
+			Constraint::Length(4),
+			Constraint::Percentage(10),
+			Constraint::Fill(1),
+		])
+		.areas(browser_area);
+		let control_panel_area = control_panel_area.inner(Margin::new(1, 0));
+		let navbar_area = navbar_area_fixed.union(navbar_area_dynamic);
+
+		let control_panel_block = Block::new()
+			.borders(Borders::ALL)
 			.border_type(BorderType::Rounded);
-		let inner = block.inner(area);
+		control_panel_block.render_ref(control_panel_area, buf);
 
-		let text = "This is a tui template.\n\
-			Press `Esc`, `Ctrl-C` or `q` to stop running.\n\
-			Press 'j' and 'k' to decrement and increment the counter respectively.";
+		let navbar_block = Block::new()
+			.borders(Borders::RIGHT)
+			.border_type(BorderType::Plain);
+		navbar_block.render_ref(navbar_area, buf);
 
-		let paragraph = Paragraph::new(text)
-			.block(block)
-			.fg(Color::Cyan)
-			.bg(Color::Black)
-			.centered();
+		symbols::line::HORIZONTAL_UP.render(
+			Rect::new(navbar_area.right() - 1, control_panel_area.top(), 1, 1),
+			buf,
+		);
+		symbols::line::HORIZONTAL_DOWN.render(
+			Rect::new(
+				navbar_area.right() - 1,
+				control_panel_area.bottom() - 1,
+				1,
+				1,
+			),
+			buf,
+		);
 
-		paragraph.render(area, buf);
+		let control_panel_area = control_panel_block.inner(control_panel_area);
+		let navbar_area = navbar_block.inner(navbar_area);
 
-		let [counter_area, click_area] =
-			Layout::vertical([Constraint::Length(1), Constraint::Length(25)])
-				.margin(3)
-				.areas(inner);
-		if let Ok((mut area, _)) = children.get_mut(self.counter) {
-			area.0 = counter_area;
+		if let Ok((mut area, _)) = children.get_mut(self.control_panel) {
+			**area = control_panel_area;
 		}
-		if let Ok((mut area, _)) = children.get_mut(self.click) {
-			area.0 = click_area;
+		if let Ok((mut area, _)) = children.get_mut(self.nav_bar) {
+			**area = navbar_area;
+		}
+		if let Ok((mut area, _)) = children.get_mut(self.library) {
+			**area = library_area;
 		}
 	}
 }
