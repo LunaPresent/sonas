@@ -1,22 +1,16 @@
-use std::ops::DerefMut;
-
 use bevy_ecs::{
+	component::Component,
 	entity::Entity,
-	system::{EntityCommands, In, Query, Res},
+	system::{In, InMut, Query, Res},
 };
-use color_eyre::eyre;
 use ratatui::{
 	buffer::Buffer,
-	layout::{Constraint, Flex, Layout, Position, Rect},
+	layout::{Constraint, Flex, Layout, Position},
 	style::{Color, Stylize as _},
 	widgets::{Block, Padding, Widget as _, WidgetRef as _},
 };
 
-use crate::{
-	app::{app_event::AppEvent, component::GenericComponent},
-	ecs::{Area, CursorPos, EntityCommandsExt, EventFlow, UiComponent, Viewport},
-	event::Event,
-};
+use crate::ecs::{Area, CursorPos, RenderSystem};
 
 #[derive(Debug, Clone, Copy)]
 pub enum NavbarButtonType {
@@ -25,18 +19,15 @@ pub enum NavbarButtonType {
 	Playlists,
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Component, Clone, Copy)]
+#[require(RenderSystem::new(Self::render))]
 pub struct NavbarButtonComponent {
 	button_type: NavbarButtonType,
-	hovered: bool,
 }
 
 impl NavbarButtonComponent {
 	pub fn new(button_type: NavbarButtonType) -> Self {
-		Self {
-			button_type,
-			hovered: false,
-		}
+		Self { button_type }
 	}
 
 	fn text(self) -> &'static str {
@@ -55,53 +46,30 @@ impl NavbarButtonComponent {
 		}
 	}
 
-	fn bg_colour(self) -> Color {
-		if self.hovered {
-			Color::Black
-		} else {
-			Color::Reset
-		}
-	}
-}
-
-fn on_render(
-	In(target): In<Entity>,
-	cursor: Res<CursorPos>,
-	mut query: Query<(&mut GenericComponent, &Area)>,
-) -> eyre::Result<()> {
-	let (mut component, area) = query.get_mut(target)?;
-	if let GenericComponent::NavbarButton(component) = component.deref_mut() {
-		component.hovered = area.contains(Position::new(cursor.x, cursor.y));
-	}
-	Ok(())
-}
-
-impl UiComponent<AppEvent> for NavbarButtonComponent {
-	fn handle_event(&mut self, event: &Event<AppEvent>, mut cmd: EntityCommands) -> EventFlow {
-		match event {
-			Event::Render => {
-				cmd.run_system_cached(on_render);
-				EventFlow::Consume
-			}
-			_ => EventFlow::Propagate,
-		}
+	fn bg_colour(hovered: bool) -> Color {
+		if hovered { Color::Black } else { Color::Reset }
 	}
 
 	fn render(
-		&self,
-		area: Rect,
-		buf: &mut Buffer,
-		_children: Query<(&mut Area, Option<&mut Viewport>)>,
+		(In(entity), InMut(buf)): (In<Entity>, InMut<Buffer>),
+		query: Query<&Self>,
+		areas: Query<&Area>,
+		cursor: Res<CursorPos>,
 	) {
+		let comp = query.get(entity).expect("?");
+		let area = **areas.get(entity).expect("?");
+
+		let hovered = area.contains(Position::new(cursor.x, cursor.y));
+
 		let block = Block::new()
-			.bg(self.bg_colour())
+			.bg(Self::bg_colour(hovered))
 			.padding(Padding::horizontal(1));
 		block.render_ref(area, buf);
 
 		let [text_area] = Layout::vertical(Constraint::from_lengths([1]))
 			.flex(Flex::Center)
 			.areas(block.inner(area));
-		format!("{} {}", self.icon(), self.text())
+		format!("{} {}", comp.icon(), comp.text())
 			.bold()
 			.render(text_area, buf);
 	}

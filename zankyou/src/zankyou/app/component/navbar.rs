@@ -1,63 +1,61 @@
 use std::iter;
 
 use bevy_ecs::{
+	component::Component,
 	entity::Entity,
-	system::{EntityCommands, Query},
+	system::{Commands, In, InMut, Query},
 };
 use ratatui::{
 	buffer::Buffer,
-	layout::{Constraint, Layout, Rect},
+	layout::{Constraint, Layout},
 };
 
-use crate::{
-	app::app_event::AppEvent,
-	ecs::{Area, EntityCommandsExt as _, UiComponent, Viewport},
-};
+use crate::ecs::{Area, EntityCommandsExt as _, InitSystem, RenderSystem};
 
-use super::{GenericComponent, NavbarButtonComponent, navbar_button::NavbarButtonType};
+use super::{NavbarButtonComponent, navbar_button::NavbarButtonType};
 
-#[derive(Debug, Default)]
+#[derive(Debug, Component, Default)]
+#[require(InitSystem::new(Self::init), RenderSystem::new(Self::render))]
 pub struct NavbarComponent {
 	buttons: Vec<Entity>,
 }
 
-impl UiComponent<AppEvent> for NavbarComponent {
-	fn init(&mut self, mut cmd: EntityCommands) {
-		self.buttons.reserve(3);
-		self.buttons.push(
-			cmd.spawn_child(GenericComponent::from(NavbarButtonComponent::new(
-				NavbarButtonType::Albums,
-			)))
-			.id(),
+impl NavbarComponent {
+	fn init(In(entity): In<Entity>, mut query: Query<&mut Self>, mut cmd: Commands) {
+		let mut comp = query.get_mut(entity).expect("?");
+		let mut ec = cmd.entity(entity);
+
+		comp.buttons.reserve(3);
+		comp.buttons.push(
+			ec.spawn_child(NavbarButtonComponent::new(NavbarButtonType::Albums))
+				.id(),
 		);
-		self.buttons.push(
-			cmd.spawn_child(GenericComponent::from(NavbarButtonComponent::new(
-				NavbarButtonType::Artists,
-			)))
-			.id(),
+		comp.buttons.push(
+			ec.spawn_child(NavbarButtonComponent::new(NavbarButtonType::Artists))
+				.id(),
 		);
-		self.buttons.push(
-			cmd.spawn_child(GenericComponent::from(NavbarButtonComponent::new(
-				NavbarButtonType::Playlists,
-			)))
-			.id(),
+		comp.buttons.push(
+			ec.spawn_child(NavbarButtonComponent::new(NavbarButtonType::Playlists))
+				.id(),
 		);
 	}
 
 	fn render(
-		&self,
-		area: Rect,
-		_buf: &mut Buffer,
-		mut children: Query<(&mut Area, Option<&mut Viewport>)>,
+		(In(entity), InMut(buf)): (In<Entity>, InMut<Buffer>),
+		query: Query<&Self>,
+		mut areas: Query<&mut Area>,
 	) {
-		let areas = Layout::vertical(Constraint::from_lengths(iter::repeat_n(
+		let comp = query.get(entity).expect("?");
+		let area = **areas.get(entity).expect("?");
+
+		let button_areas = Layout::vertical(Constraint::from_lengths(iter::repeat_n(
 			1,
-			self.buttons.len(),
+			comp.buttons.len(),
 		)))
 		.spacing(1)
 		.split(area);
-		for (&button, &button_area) in self.buttons.iter().zip(areas.iter()) {
-			if let Ok((mut area, _)) = children.get_mut(button) {
+		for (&button, &button_area) in comp.buttons.iter().zip(button_areas.iter()) {
+			if let Ok(mut area) = areas.get_mut(button) {
 				**area = button_area;
 			}
 		}

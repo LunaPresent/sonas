@@ -6,87 +6,143 @@ mod ui_component;
 
 pub use entity_commands_ext::EntityCommandsExt;
 pub use event_handling::{CursorPos, EventFlow, Focus};
-use event_handling::{
-	handle_broadcast_event, handle_input_event, handle_mouse_event, handle_target_event,
-};
-use init::init_components;
 pub use rendering::{Area, Viewport};
-pub use ui_component::UiComponent;
+pub use ui_component::{InitSystem, RenderSystem, UpdateSystem};
 
 use std::marker::PhantomData;
 
-use bevy_ecs::{
-	component::{Component, Mutable},
-	entity::Entity,
-	system::RunSystemOnce,
-	world::World,
-};
+use bevy_ecs::{component::Component, entity::Entity, system::RunSystemOnce, world::World};
 use color_eyre::eyre;
 use ratatui::Frame;
 
-use crate::event::{Dispatch, Event, EventDispatch};
-use rendering::render;
+use crate::{
+	ecs::rendering::find_render_targets,
+	event::{Dispatch, Event, EventDispatch},
+};
+use event_handling::{
+	UpdateContext, find_broadcast_entities, find_cursor_entities, find_input_entities,
+	find_target_entities,
+};
+use init::init_components;
+use rendering::RenderContext;
 
 #[derive(Debug)]
-pub struct ComponentSystem<C, E> {
+pub struct ComponentSystem<E>
+where
+	E: 'static,
+{
 	world: World,
 	root_entity: Entity,
-	phantom_data: PhantomData<(C, E)>,
+	update_targets: Vec<UpdateContext<E>>,
+	render_targets: Vec<RenderContext>,
+	phantom_data: PhantomData<E>,
 }
 
-impl<C, E> ComponentSystem<C, E>
+impl<E> ComponentSystem<E>
 where
-	C: UiComponent<E> + Component<Mutability = Mutable> + Default,
 	E: Send + Sync + Clone + 'static,
 {
-	pub fn new() -> ComponentSystem<C, E> {
+	pub fn new<C>() -> Self
+	where
+		C: Component + Default,
+	{
 		let mut world = World::new();
 		let root_entity = world.spawn(C::default()).id();
 		world.insert_resource(Focus {
 			target: root_entity,
 		});
 		world.insert_resource(CursorPos::default());
+
 		world.flush();
+
+		world
+			.run_system_cached(init_components)
+			.expect("Unexpected error in component initialisation");
 
 		ComponentSystem {
 			world,
 			root_entity,
+			update_targets: Vec::new(),
+			render_targets: Vec::new(),
 			phantom_data: PhantomData,
 		}
 	}
 
 	pub fn handle_event(&mut self, ed: EventDispatch<E>) -> eyre::Result<Option<Event<E>>> {
-		self.world.run_system_cached(init_components::<C, E>)?;
+		const ERROR_MSG: &'static str = "Unexpected error in event handling system";
+
+		self.update_targets.clear();
 
 		match ed.dispatch {
-			Dispatch::Input => Ok(self
+			Dispatch::Input => self
 				.world
-				.run_system_once_with(handle_input_event::<C, _>, ed.event)?),
-			Dispatch::Broadcast => Ok(Some(
-				self.world
-					.run_system_once_with(handle_broadcast_event::<C, _>, ed.event)?,
-			)),
-			Dispatch::Cursor { x, y } => Ok(self.world.run_system_cached_with(
-				handle_mouse_event::<C, _>,
-				(ed.event, self.root_entity, x, y),
-			)?),
-			Dispatch::Target(target) => Ok(self
+				.run_system_once_with(find_input_entities, &mut self.update_targets)
+				.expect(ERROR_MSG),
+			Dispatch::Broadcast => self
 				.world
-				.run_system_once_with(handle_target_event::<C, _>, (ed.event, target))?),
+				.run_system_once_with(find_broadcast_entities, &mut self.update_targets)
+				.expect(ERROR_MSG),
+			Dispatch::Cursor { x, y } => self
+				.world
+				.run_system_cached_with(
+					find_cursor_entities,
+					(&mut self.update_targets, &ed.event, self.root_entity, x, y),
+				)
+				.expect(ERROR_MSG),
+			Dispatch::Target(target) => self
+				.world
+				.run_system_once_with(find_target_entities, (&mut self.update_targets, target))
+				.expect(ERROR_MSG),
 		}
+
+		let event = match ed.dispatch {
+			Dispatch::Broadcast => {
+				for context in self.update_targets.iter() {
+					let _ = self
+						.world
+						.run_system_with(context.system, (context.entity, &ed.event))?;
+				}
+				Some(ed.event)
+			}
+			_ => {
+				let mut full_propagate = true;
+				for context in self.update_targets.iter() {
+					let flow = self
+						.world
+						.run_system_with(context.system, (context.entity, &ed.event))?;
+					if flow == EventFlow::Consume {
+						full_propagate = false;
+						break;
+					}
+				}
+				if full_propagate { Some(ed.event) } else { None }
+			}
+		};
+
+		self.world.run_system_cached(init_components)?;
+
+		Ok(event)
 	}
 
 	pub fn draw(&mut self, frame: &mut Frame) {
-		self.world
-			.run_system_cached(init_components::<C, E>)
-			.expect("Something broke while initialising comoponents");
-
 		**self
 			.world
 			.get_mut::<Area>(self.root_entity)
 			.expect("Root element must have an Area component") = frame.area();
+
+		self.render_targets.clear();
+
 		self.world
-			.run_system_once_with(render::<C, E>, (self.root_entity, frame.buffer_mut()))
-			.expect("Something broke while rendering");
+			.run_system_once_with(
+				find_render_targets,
+				(&mut self.render_targets, self.root_entity),
+			)
+			.expect("?");
+
+		for context in self.render_targets.iter() {
+			self.world
+				.run_system_with(context.system, (context.entity, frame.buffer_mut()))
+				.expect("?");
+		}
 	}
 }

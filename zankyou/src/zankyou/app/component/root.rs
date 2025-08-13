@@ -1,8 +1,7 @@
-use std::ops::DerefMut;
-
 use bevy_ecs::{
+	component::Component,
 	entity::Entity,
-	system::{EntityCommands, Query},
+	system::{Commands, In, InMut, Query},
 };
 use ratatui::{
 	buffer::Buffer,
@@ -11,14 +10,11 @@ use ratatui::{
 	widgets::{Block, BorderType, Borders, Widget as _, WidgetRef as _},
 };
 
-use crate::{
-	app::app_event::AppEvent,
-	ecs::{Area, EntityCommandsExt as _, UiComponent, Viewport},
-};
+use super::{ControlPanelComponent, LibraryComponent, NavbarComponent};
+use crate::ecs::{Area, EntityCommandsExt as _, InitSystem, RenderSystem};
 
-use super::{ControlPanelComponent, GenericComponent, LibraryComponent, NavbarComponent};
-
-#[derive(Debug)]
+#[derive(Debug, Component)]
+#[require(InitSystem::new(Self::init), RenderSystem::new(Self::render))]
 pub struct RootComponent {
 	control_panel: Entity,
 	nav_bar: Entity,
@@ -35,25 +31,23 @@ impl Default for RootComponent {
 	}
 }
 
-impl UiComponent<AppEvent> for RootComponent {
-	fn init(&mut self, mut cmd: EntityCommands) {
-		self.control_panel = cmd
-			.spawn_child(GenericComponent::from(ControlPanelComponent::default()))
-			.id();
-		self.nav_bar = cmd
-			.spawn_child(GenericComponent::from(NavbarComponent::default()))
-			.id();
-		self.library = cmd
-			.spawn_child(GenericComponent::from(LibraryComponent::default()))
-			.id();
+impl RootComponent {
+	fn init(In(entity): In<Entity>, mut query: Query<&mut Self>, mut cmd: Commands) {
+		let mut comp = query.get_mut(entity).expect("?");
+		let mut ec = cmd.entity(entity);
+		comp.control_panel = ec.spawn_child(ControlPanelComponent::default()).id();
+		comp.nav_bar = ec.spawn_child(NavbarComponent::default()).id();
+		comp.library = ec.spawn_child(LibraryComponent::default()).id();
 	}
 
 	fn render(
-		&self,
-		area: Rect,
-		buf: &mut Buffer,
-		mut children: Query<(&mut Area, Option<&mut Viewport>)>,
+		(In(entity), InMut(buf)): (In<Entity>, InMut<Buffer>),
+		query: Query<&Self>,
+		mut areas: Query<&mut Area>,
 	) {
+		let comp = query.get(entity).expect("?");
+		let area = **areas.get(entity).expect("?");
+
 		let [browser_area, control_panel_area] =
 			Layout::vertical([Constraint::Fill(1), Constraint::Length(7)]).areas(area);
 		let [navbar_area_fixed, navbar_area_dynamic, library_area] = Layout::horizontal([
@@ -92,13 +86,13 @@ impl UiComponent<AppEvent> for RootComponent {
 		let control_panel_area = control_panel_block.inner(control_panel_area);
 		let navbar_area = navbar_block.inner(navbar_area);
 
-		if let Ok((mut area, _)) = children.get_mut(self.control_panel) {
+		if let Ok(mut area) = areas.get_mut(comp.control_panel) {
 			**area = control_panel_area;
 		}
-		if let Ok((mut area, _)) = children.get_mut(self.nav_bar) {
+		if let Ok(mut area) = areas.get_mut(comp.nav_bar) {
 			**area = navbar_area;
 		}
-		if let Ok((mut area, _)) = children.get_mut(self.library) {
+		if let Ok(mut area) = areas.get_mut(comp.library) {
 			**area = library_area;
 		}
 	}
