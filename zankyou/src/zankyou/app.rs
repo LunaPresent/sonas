@@ -10,14 +10,14 @@ use crate::{
 	tui::Tui,
 };
 use app_event::AppEvent;
-use component::GenericComponent;
+use component::RootComponent;
 
 #[derive(Debug)]
 pub struct App {
 	pub should_quit: bool,
 	pub should_suspend: bool,
 	pub events: EventQueue<AppEvent>,
-	pub ecs: ComponentSystem<GenericComponent, AppEvent>,
+	pub ecs: ComponentSystem<AppEvent>,
 }
 
 impl Default for App {
@@ -26,7 +26,7 @@ impl Default for App {
 			should_quit: false,
 			should_suspend: false,
 			events: EventQueue::new(),
-			ecs: ComponentSystem::new(),
+			ecs: ComponentSystem::new::<RootComponent>(),
 		}
 	}
 }

@@ -1,19 +1,15 @@
-use std::iter;
-
 use bevy_ecs::{
-	component::{Component, Mutable},
 	entity::Entity,
 	hierarchy::{ChildOf, Children},
 	relationship::RelationshipTarget,
 	resource::Resource,
-	system::{Commands, In, Local, Query, Res, ResMut},
+	system::{In, InMut, InRef, Local, Query, Res, ResMut, SystemId},
 };
 use crossterm::event::MouseEventKind;
 use ratatui::layout::Position;
 
-use crate::event::Event;
-
-use super::{Area, UiComponent};
+use super::Area;
+use crate::{ecs::ui_component::UpdateHandle, event::Event};
 
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
 pub enum EventFlow {
@@ -41,48 +37,56 @@ impl Default for CursorPos {
 	}
 }
 
-pub fn handle_input_event<C, E>(
-	In(event): In<Event<E>>,
+#[derive(Debug)]
+pub struct UpdateContext<E>
+where
+	E: 'static,
+{
+	pub entity: Entity,
+	pub system: SystemId<(In<Entity>, InRef<'static, Event<E>>), EventFlow>,
+}
+
+pub fn find_input_entities<E>(
+	InMut(targets): InMut<Vec<UpdateContext<E>>>,
 	focus: Res<Focus>,
+	handles: Query<&UpdateHandle<E>>,
 	parents: Query<&ChildOf>,
-	components: Query<&mut C>,
-	commands: Commands,
-) -> Option<Event<E>>
-where
-	C: UiComponent<E> + Component<Mutability = Mutable>,
-	E: Send + Sync + Clone + 'static,
+) where
+	E: 'static,
 {
-	bubble_event(focus.target, event, parents, components, commands)
+	bubble_entities(focus.target, targets, handles, parents);
 }
 
-pub fn handle_broadcast_event<C, E>(
-	In(event): In<Event<E>>,
-	components: Query<(&mut C, Entity)>,
-	mut commands: Commands,
-) -> Event<E>
-where
-	C: UiComponent<E> + Component<Mutability = Mutable>,
-	E: Send + Sync + Clone + 'static,
+pub fn find_broadcast_entities<E>(
+	InMut(targets): InMut<Vec<UpdateContext<E>>>,
+	components: Query<(Entity, &UpdateHandle<E>)>,
+) where
+	E: 'static,
 {
-	for (mut component, entity) in components {
-		component.handle_event(&event, commands.entity(entity));
+	for (entity, handle) in components {
+		targets.push(UpdateContext {
+			entity,
+			system: **handle,
+		});
 	}
-	event
 }
 
-pub fn handle_mouse_event<C, E>(
-	(In(event), In(root), In(x), In(y)): (In<Event<E>>, In<Entity>, In<u16>, In<u16>),
+pub fn find_cursor_entities<E>(
+	(InMut(targets), InRef(event), In(root), In(x), In(y)): (
+		InMut<Vec<UpdateContext<E>>>,
+		InRef<Event<E>>,
+		In<Entity>,
+		In<u16>,
+		In<u16>,
+	),
 	mut clicked: Local<Option<Entity>>,
 	mut cursor_pos: ResMut<CursorPos>,
 	areas: Query<&Area>,
 	children: Query<&Children>,
+	handles: Query<&UpdateHandle<E>>,
 	parents: Query<&ChildOf>,
-	components: Query<&mut C>,
-	commands: Commands,
-) -> Option<Event<E>>
-where
-	C: UiComponent<E> + Component<Mutability = Mutable>,
-	E: Send + Sync + Clone + 'static,
+) where
+	E: 'static,
 {
 	cursor_pos.x = x;
 	cursor_pos.y = y;
@@ -102,42 +106,38 @@ where
 		}
 	}
 
-	target.and_then(|t| bubble_event(t, event, parents, components, commands))
-}
-
-pub fn handle_target_event<C, E>(
-	(In(event), In(target)): (In<Event<E>>, In<Entity>),
-	parents: Query<&ChildOf>,
-	components: Query<&mut C>,
-	commands: Commands,
-) -> Option<Event<E>>
-where
-	C: UiComponent<E> + Component<Mutability = Mutable>,
-	E: Send + Sync + Clone + 'static,
-{
-	bubble_event(target, event, parents, components, commands)
-}
-
-fn bubble_event<C, E>(
-	target: Entity,
-	event: Event<E>,
-	parents: Query<&ChildOf>,
-	mut components: Query<&mut C>,
-	mut commands: Commands,
-) -> Option<Event<E>>
-where
-	C: UiComponent<E> + Component<Mutability = Mutable>,
-	E: Send + Sync + Clone + 'static,
-{
-	for target in iter::once(target).chain(parents.iter_ancestors(target)) {
-		let cmd = commands.entity(target);
-		if let Ok(mut component) = components.get_mut(target)
-			&& component.handle_event(&event, cmd) == EventFlow::Consume
-		{
-			return None;
-		}
+	if let Some(target) = target {
+		bubble_entities(target, targets, handles, parents);
 	}
-	Some(event)
+}
+
+pub fn find_target_entities<E>(
+	(InMut(targets), In(target)): (InMut<Vec<UpdateContext<E>>>, In<Entity>),
+	handles: Query<&UpdateHandle<E>>,
+	parents: Query<&ChildOf>,
+) where
+	E: 'static,
+{
+	bubble_entities(target, targets, handles, parents);
+}
+
+fn bubble_entities<E>(
+	head: Entity,
+	targets: &mut Vec<UpdateContext<E>>,
+	handles: Query<&UpdateHandle<E>>,
+	parents: Query<&ChildOf>,
+) where
+	E: 'static,
+{
+	if let Ok(handle) = handles.get(head) {
+		targets.push(UpdateContext {
+			entity: head,
+			system: **handle,
+		});
+	}
+	if let Ok(parent) = parents.get(head) {
+		bubble_entities(parent.parent(), targets, handles, parents);
+	}
 }
 
 fn find_cursor_target(

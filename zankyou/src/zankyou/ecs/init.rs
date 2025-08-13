@@ -1,23 +1,21 @@
 use bevy_ecs::{
-	component::{Component, Mutable},
 	entity::Entity,
 	query::Added,
 	system::{Commands, Query},
 };
 
-use super::UiComponent;
+use crate::ecs::ui_component::InitHandle;
 
-pub fn init_components<C, E>(query: Query<(&mut C, Entity), Added<C>>, mut commands: Commands)
-where
-	C: UiComponent<E> + Component<Mutability = Mutable>,
-	E: Send + Sync + Clone + 'static,
-{
+pub fn init_components(
+	query: Query<(&InitHandle, Entity), Added<InitHandle>>,
+	mut commands: Commands,
+) {
 	let mut repeat = false;
-	for (mut comp, entity) in query {
-		comp.init(commands.entity(entity));
+	for (handle, entity) in query {
+		commands.run_system_with(**handle, entity);
 		repeat = true;
 	}
 	if repeat {
-		commands.run_system_cached(init_components::<C, E>);
+		commands.run_system_cached(init_components);
 	}
 }
