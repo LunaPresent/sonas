@@ -5,12 +5,10 @@ use bevy_ecs::{
 	entity::Entity,
 	system::{Commands, In, InMut, Query},
 };
-use ratatui::{
-	buffer::Buffer,
-	layout::{Constraint, Layout},
-};
+use color_eyre::eyre;
+use ratatui::layout::{Constraint, Layout};
 
-use crate::ecs::{Area, EntityCommandsExt as _, InitSystem, RenderSystem};
+use crate::ecs::{Area, EntityCommandsExt as _, InitInput, InitSystem, RenderInput, RenderSystem};
 
 use super::{NavbarButtonComponent, navbar_button::NavbarButtonType};
 
@@ -21,8 +19,12 @@ pub struct NavbarComponent {
 }
 
 impl NavbarComponent {
-	fn init(In(entity): In<Entity>, mut query: Query<&mut Self>, mut cmd: Commands) {
-		let mut comp = query.get_mut(entity).expect("?");
+	fn init(
+		In(entity): InitInput,
+		mut query: Query<&mut Self>,
+		mut cmd: Commands,
+	) -> eyre::Result<()> {
+		let mut comp = query.get_mut(entity)?;
 		let mut ec = cmd.entity(entity);
 
 		comp.buttons.reserve(3);
@@ -38,15 +40,17 @@ impl NavbarComponent {
 			ec.spawn_child(NavbarButtonComponent::new(NavbarButtonType::Playlists))
 				.id(),
 		);
+
+		Ok(())
 	}
 
 	fn render(
-		(In(entity), InMut(buf)): (In<Entity>, InMut<Buffer>),
+		(In(entity), InMut(_buf)): RenderInput,
 		query: Query<&Self>,
 		mut areas: Query<&mut Area>,
-	) {
-		let comp = query.get(entity).expect("?");
-		let area = **areas.get(entity).expect("?");
+	) -> eyre::Result<()> {
+		let comp = query.get(entity)?;
+		let area = **areas.get(entity)?;
 
 		let button_areas = Layout::vertical(Constraint::from_lengths(iter::repeat_n(
 			1,
@@ -55,9 +59,9 @@ impl NavbarComponent {
 		.spacing(1)
 		.split(area);
 		for (&button, &button_area) in comp.buttons.iter().zip(button_areas.iter()) {
-			if let Ok(mut area) = areas.get_mut(button) {
-				**area = button_area;
-			}
+			**areas.get_mut(button)? = button_area;
 		}
+
+		Ok(())
 	}
 }

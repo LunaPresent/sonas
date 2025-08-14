@@ -3,13 +3,16 @@ use bevy_ecs::{
 	hierarchy::{ChildOf, Children},
 	relationship::RelationshipTarget,
 	resource::Resource,
-	system::{In, InMut, InRef, Local, Query, Res, ResMut, SystemId},
+	system::{In, InMut, InRef, Local, Query, Res, ResMut},
 };
 use crossterm::event::MouseEventKind;
 use ratatui::layout::Position;
 
 use super::Area;
-use crate::{ecs::ui_component::UpdateHandle, event::Event};
+use crate::{
+	ecs::ui_component::{UpdateHandle, UpdateSystemId},
+	event::Event,
+};
 
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
 pub enum EventFlow {
@@ -43,7 +46,7 @@ where
 	E: 'static,
 {
 	pub entity: Entity,
-	pub system: SystemId<(In<Entity>, InRef<'static, Event<E>>), EventFlow>,
+	pub system: UpdateSystemId<E>,
 }
 
 pub fn find_input_entities<E>(
@@ -71,14 +74,15 @@ pub fn find_broadcast_entities<E>(
 	}
 }
 
+type FindCursorEntitiesInput<'a, E> = (
+	InMut<'a, Vec<UpdateContext<E>>>,
+	InRef<'a, Event<E>>,
+	In<Entity>,
+	In<u16>,
+	In<u16>,
+);
 pub fn find_cursor_entities<E>(
-	(InMut(targets), InRef(event), In(root), In(x), In(y)): (
-		InMut<Vec<UpdateContext<E>>>,
-		InRef<Event<E>>,
-		In<Entity>,
-		In<u16>,
-		In<u16>,
-	),
+	(InMut(targets), InRef(event), In(root), In(x), In(y)): FindCursorEntitiesInput<E>,
 	mut clicked: Local<Option<Entity>>,
 	mut cursor_pos: ResMut<CursorPos>,
 	areas: Query<&Area>,

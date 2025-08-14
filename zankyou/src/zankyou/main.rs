@@ -6,12 +6,12 @@ mod tui;
 
 use clap::Parser;
 use cli::Cli;
-use color_eyre::Result;
+use color_eyre::eyre;
 
 use crate::app::App;
 
 #[tokio::main]
-async fn main() -> Result<()> {
+async fn main() -> eyre::Result<()> {
 	color_eyre::install()?;
 	let _ = Cli::parse();
 	let app = App::new();

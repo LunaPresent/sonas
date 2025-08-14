@@ -7,7 +7,9 @@ mod ui_component;
 pub use entity_commands_ext::EntityCommandsExt;
 pub use event_handling::{CursorPos, EventFlow, Focus};
 pub use rendering::{Area, Viewport};
-pub use ui_component::{InitSystem, RenderSystem, UpdateSystem};
+pub use ui_component::{
+	InitInput, InitSystem, RenderInput, RenderSystem, UpdateInput, UpdateSystem,
+};
 
 use std::marker::PhantomData;
 
@@ -69,30 +71,22 @@ where
 	}
 
 	pub fn handle_event(&mut self, ed: EventDispatch<E>) -> eyre::Result<Option<Event<E>>> {
-		const ERROR_MSG: &'static str = "Unexpected error in event handling system";
-
 		self.update_targets.clear();
 
 		match ed.dispatch {
 			Dispatch::Input => self
 				.world
-				.run_system_once_with(find_input_entities, &mut self.update_targets)
-				.expect(ERROR_MSG),
+				.run_system_once_with(find_input_entities, &mut self.update_targets)?,
 			Dispatch::Broadcast => self
 				.world
-				.run_system_once_with(find_broadcast_entities, &mut self.update_targets)
-				.expect(ERROR_MSG),
-			Dispatch::Cursor { x, y } => self
-				.world
-				.run_system_cached_with(
-					find_cursor_entities,
-					(&mut self.update_targets, &ed.event, self.root_entity, x, y),
-				)
-				.expect(ERROR_MSG),
+				.run_system_once_with(find_broadcast_entities, &mut self.update_targets)?,
+			Dispatch::Cursor { x, y } => self.world.run_system_cached_with(
+				find_cursor_entities,
+				(&mut self.update_targets, &ed.event, self.root_entity, x, y),
+			)?,
 			Dispatch::Target(target) => self
 				.world
-				.run_system_once_with(find_target_entities, (&mut self.update_targets, target))
-				.expect(ERROR_MSG),
+				.run_system_once_with(find_target_entities, (&mut self.update_targets, target))?,
 		}
 
 		let event = match ed.dispatch {
@@ -109,7 +103,7 @@ where
 				for context in self.update_targets.iter() {
 					let flow = self
 						.world
-						.run_system_with(context.system, (context.entity, &ed.event))?;
+						.run_system_with(context.system, (context.entity, &ed.event))??;
 					if flow == EventFlow::Consume {
 						full_propagate = false;
 						break;
@@ -124,7 +118,7 @@ where
 		Ok(event)
 	}
 
-	pub fn draw(&mut self, frame: &mut Frame) {
+	pub fn draw(&mut self, frame: &mut Frame) -> eyre::Result<()> {
 		**self
 			.world
 			.get_mut::<Area>(self.root_entity)
@@ -132,17 +126,16 @@ where
 
 		self.render_targets.clear();
 
-		self.world
-			.run_system_once_with(
-				find_render_targets,
-				(&mut self.render_targets, self.root_entity),
-			)
-			.expect("?");
+		self.world.run_system_once_with(
+			find_render_targets,
+			(&mut self.render_targets, self.root_entity),
+		)?;
 
 		for context in self.render_targets.iter() {
 			self.world
-				.run_system_with(context.system, (context.entity, frame.buffer_mut()))
-				.expect("?");
+				.run_system_with(context.system, (context.entity, frame.buffer_mut()))??;
 		}
+
+		Ok(())
 	}
 }

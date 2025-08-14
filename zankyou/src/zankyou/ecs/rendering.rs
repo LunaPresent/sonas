@@ -4,12 +4,12 @@ use bevy_ecs::{
 	component::Component,
 	entity::Entity,
 	hierarchy::Children,
-	system::{In, InMut, Query, SystemId},
+	system::{In, InMut, Query},
 };
 use derive_more::{Deref, DerefMut};
 use ratatui::{buffer::Buffer, layout::Rect};
 
-use crate::ecs::ui_component::RenderHandle;
+use crate::ecs::ui_component::{RenderHandle, RenderSystemId};
 
 #[derive(Debug, Component, Default, Deref, DerefMut)]
 pub struct Area(Rect);
@@ -25,7 +25,7 @@ pub struct Viewport {
 #[derive(Debug)]
 pub struct RenderContext {
 	pub entity: Entity,
-	pub system: SystemId<(In<Entity>, InMut<'static, Buffer>), ()>,
+	pub system: RenderSystemId,
 }
 
 pub fn find_render_targets(
@@ -43,51 +43,6 @@ pub fn find_render_targets(
 	}
 }
 
-// pub fn render(
-// 	(In(entity), InMut(buf)): (In<Entity>, InMut<Buffer>),
-// 	components: Query<(&C, Option<&Children>), With<Area>>,
-// 	areas: Query<(&mut Area, Option<&mut Viewport>)>,
-// ) {
-// 	render_recursive(entity, buf, components, areas);
-// }
-//
-// fn render_recursive<C: UiComponent<E> + Component, E>(
-// 	entity: Entity,
-// 	buf: &mut Buffer,
-// 	components: Query<(&C, Option<&Children>), With<Area>>,
-// 	mut areas: Query<(&mut Area, Option<&mut Viewport>)>,
-// ) {
-// 	if let Ok((comp, children)) = components.get(entity) {
-// 		unsafe {
-// 			match areas.reborrow_unsafe().get_mut(entity) {
-// 				Ok((area, Some(mut vp))) => {
-// 					comp.render(vp.buf.area, &mut vp.buf, areas.reborrow_unsafe());
-// 					if let Some(children) = children {
-// 						for &child in children {
-// 							render_recursive(
-// 								child,
-// 								&mut vp.buf,
-// 								components,
-// 								areas.reborrow_unsafe(),
-// 							);
-// 						}
-// 					}
-// 					combine_viewports(buf, &vp, area.0);
-// 				}
-// 				Ok((area, None)) => {
-// 					comp.render(area.0, buf, areas.reborrow());
-// 					if let Some(children) = children {
-// 						for &child in children {
-// 							render_recursive(child, buf, components, areas.reborrow());
-// 						}
-// 					}
-// 				}
-// 				_ => (),
-// 			}
-// 		}
-// 	}
-// }
-//
 // fn combine_viewports(dst: &mut Buffer, src: &Viewport, area: Rect) {
 // 	let rect = area.intersection(dst.area);
 //
