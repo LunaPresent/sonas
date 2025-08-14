@@ -3,15 +3,15 @@ use bevy_ecs::{
 	entity::Entity,
 	system::{Commands, In, InMut, Query},
 };
+use color_eyre::eyre;
 use ratatui::{
-	buffer::Buffer,
 	layout::{Constraint, Layout, Margin, Rect},
 	symbols,
 	widgets::{Block, BorderType, Borders, Widget as _, WidgetRef as _},
 };
 
 use super::{ControlPanelComponent, LibraryComponent, NavbarComponent};
-use crate::ecs::{Area, EntityCommandsExt as _, InitSystem, RenderSystem};
+use crate::ecs::{Area, EntityCommandsExt as _, InitInput, InitSystem, RenderInput, RenderSystem};
 
 #[derive(Debug, Component)]
 #[require(InitSystem::new(Self::init), RenderSystem::new(Self::render))]
@@ -32,21 +32,27 @@ impl Default for RootComponent {
 }
 
 impl RootComponent {
-	fn init(In(entity): In<Entity>, mut query: Query<&mut Self>, mut cmd: Commands) {
-		let mut comp = query.get_mut(entity).expect("?");
+	fn init(
+		In(entity): InitInput,
+		mut query: Query<&mut Self>,
+		mut cmd: Commands,
+	) -> eyre::Result<()> {
+		let mut comp = query.get_mut(entity)?;
 		let mut ec = cmd.entity(entity);
 		comp.control_panel = ec.spawn_child(ControlPanelComponent::default()).id();
 		comp.nav_bar = ec.spawn_child(NavbarComponent::default()).id();
 		comp.library = ec.spawn_child(LibraryComponent::default()).id();
+
+		Ok(())
 	}
 
 	fn render(
-		(In(entity), InMut(buf)): (In<Entity>, InMut<Buffer>),
+		(In(entity), InMut(buf)): RenderInput,
 		query: Query<&Self>,
 		mut areas: Query<&mut Area>,
-	) {
-		let comp = query.get(entity).expect("?");
-		let area = **areas.get(entity).expect("?");
+	) -> eyre::Result<()> {
+		let comp = query.get(entity)?;
+		let area = **areas.get(entity)?;
 
 		let [browser_area, control_panel_area] =
 			Layout::vertical([Constraint::Fill(1), Constraint::Length(7)]).areas(area);
@@ -86,14 +92,10 @@ impl RootComponent {
 		let control_panel_area = control_panel_block.inner(control_panel_area);
 		let navbar_area = navbar_block.inner(navbar_area);
 
-		if let Ok(mut area) = areas.get_mut(comp.control_panel) {
-			**area = control_panel_area;
-		}
-		if let Ok(mut area) = areas.get_mut(comp.nav_bar) {
-			**area = navbar_area;
-		}
-		if let Ok(mut area) = areas.get_mut(comp.library) {
-			**area = library_area;
-		}
+		**areas.get_mut(comp.control_panel)? = control_panel_area;
+		**areas.get_mut(comp.nav_bar)? = navbar_area;
+		**areas.get_mut(comp.library)? = library_area;
+
+		Ok(())
 	}
 }

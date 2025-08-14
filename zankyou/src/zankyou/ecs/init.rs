@@ -2,7 +2,9 @@ use bevy_ecs::{
 	entity::Entity,
 	query::Added,
 	system::{Commands, Query},
+	world::World,
 };
+use color_eyre::eyre;
 
 use crate::ecs::ui_component::InitHandle;
 
@@ -11,8 +13,10 @@ pub fn init_components(
 	mut commands: Commands,
 ) {
 	let mut repeat = false;
-	for (handle, entity) in query {
-		commands.run_system_with(**handle, entity);
+	for (&handle, entity) in query {
+		commands.queue(move |world: &mut World| -> eyre::Result<()> {
+			world.run_system_with(*handle, entity)?
+		});
 		repeat = true;
 	}
 	if repeat {

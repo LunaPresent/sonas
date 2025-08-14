@@ -1,6 +1,8 @@
 mod app_event;
 mod component;
 
+use std::io;
+
 use color_eyre::eyre;
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
@@ -57,7 +59,7 @@ impl App {
 		if let Some(event) = self.ecs.handle_event(ed)? {
 			match event {
 				Event::Render => {
-					tui.draw(|frame| self.ecs.draw(frame))?;
+					tui.try_draw(|frame| self.ecs.draw(frame).map_err(io::Error::other))?;
 				}
 				Event::Key(key_event) => {
 					if let Some(event) = self.map_key_events(key_event) {

@@ -13,26 +13,34 @@ use ratatui::buffer::Buffer;
 use super::{Area, event_handling::EventFlow};
 use crate::event::Event;
 
+pub type InitInput = In<Entity>;
+pub type UpdateInput<'a, E> = (In<Entity>, InRef<'a, Event<E>>);
+pub type RenderInput<'a> = (In<Entity>, InMut<'a, Buffer>);
+
+pub type InitSystemId = SystemId<InitInput, eyre::Result<()>>;
+pub type UpdateSystemId<E> = SystemId<UpdateInput<'static, E>, eyre::Result<EventFlow>>;
+pub type RenderSystemId = SystemId<RenderInput<'static>, eyre::Result<()>>;
+
 #[derive(Component)]
 #[component(on_add = Self::register_system)]
 pub struct InitSystem {
-	system_registrar: Arc<dyn GenericSystemRegistrar<In<Entity>, ()> + Sync + Send>,
+	system_registrar: Arc<dyn GenericSystemRegistrar<InitInput, eyre::Result<()>> + Sync + Send>,
 }
 
 impl InitSystem {
 	pub fn new<M, S>(system: S) -> Self
 	where
 		M: Sync + Send + 'static,
-		S: IntoSystem<In<Entity>, (), M> + Sync + Send + Clone + 'static,
+		S: IntoSystem<InitInput, eyre::Result<()>, M> + Sync + Send + Clone + 'static,
 	{
 		Self {
-			system_registrar: Arc::new(SystemRegistrar {
-				system,
-				phantom_data: PhantomData,
-			}),
+			system_registrar: Arc::new(SystemRegistrar::new(system)),
 		}
 	}
 
+	// This function is just copy pasted across all three *System impls, with the sole
+	// difference of the *Handle being different. You can however, and this is true,
+	// kiss my DRY arse if you think I'm generalising this function
 	fn register_system(mut world: DeferredWorld, context: HookContext) {
 		world.commands().queue(move |world: &mut World| {
 			let system_registrar = world
@@ -48,7 +56,6 @@ impl InitSystem {
 	}
 }
 
-//
 #[derive(Component)]
 #[component(on_add = Self::register_system)]
 pub struct UpdateSystem<E>
@@ -56,7 +63,7 @@ where
 	E: Sync + Send + 'static,
 {
 	system_registrar: Arc<
-		dyn GenericSystemRegistrar<(In<Entity>, InRef<'static, Event<E>>), EventFlow> + Sync + Send,
+		dyn GenericSystemRegistrar<UpdateInput<'static, E>, eyre::Result<EventFlow>> + Sync + Send,
 	>,
 	phantom_data: PhantomData<E>,
 }
@@ -68,17 +75,14 @@ where
 	pub fn new<M, S>(system: S) -> Self
 	where
 		M: Sync + Send + 'static,
-		S: IntoSystem<(In<Entity>, InRef<'static, Event<E>>), EventFlow, M>
+		S: IntoSystem<UpdateInput<'static, E>, eyre::Result<EventFlow>, M>
 			+ Sync
 			+ Send
 			+ Clone
 			+ 'static,
 	{
 		Self {
-			system_registrar: Arc::new(SystemRegistrar {
-				system,
-				phantom_data: PhantomData,
-			}),
+			system_registrar: Arc::new(SystemRegistrar::new(system)),
 			phantom_data: PhantomData,
 		}
 	}
@@ -102,20 +106,17 @@ where
 #[component(on_add = Self::register_system)]
 pub struct RenderSystem {
 	system_registrar:
-		Arc<dyn GenericSystemRegistrar<(In<Entity>, InMut<'static, Buffer>), ()> + Sync + Send>,
+		Arc<dyn GenericSystemRegistrar<RenderInput<'static>, eyre::Result<()>> + Sync + Send>,
 }
 
 impl RenderSystem {
 	pub fn new<M, S>(system: S) -> Self
 	where
 		M: Sync + Send + 'static,
-		S: IntoSystem<(In<Entity>, InMut<'static, Buffer>), (), M> + Sync + Send + Clone + 'static,
+		S: IntoSystem<RenderInput<'static>, eyre::Result<()>, M> + Sync + Send + Clone + 'static,
 	{
 		Self {
-			system_registrar: Arc::new(SystemRegistrar {
-				system,
-				phantom_data: PhantomData,
-			}),
+			system_registrar: Arc::new(SystemRegistrar::new(system)),
 		}
 	}
 
@@ -135,16 +136,16 @@ impl RenderSystem {
 }
 
 #[derive(Debug, Component, Clone, Copy, Deref)]
-pub struct InitHandle(SystemId<In<Entity>, ()>);
+pub struct InitHandle(InitSystemId);
 
 #[derive(Debug, Component, Clone, Copy, Deref)]
-pub struct UpdateHandle<E>(SystemId<(In<Entity>, InRef<'static, Event<E>>), EventFlow>)
+pub struct UpdateHandle<E>(UpdateSystemId<E>)
 where
 	E: 'static;
 
 #[derive(Debug, Component, Clone, Copy, Deref)]
 #[require(Area)]
-pub struct RenderHandle(SystemId<(In<Entity>, InMut<'static, Buffer>), ()>);
+pub struct RenderHandle(RenderSystemId);
 
 trait GenericSystemRegistrar<I, O>
 where

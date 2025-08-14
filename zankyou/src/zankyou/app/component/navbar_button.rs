@@ -1,16 +1,15 @@
 use bevy_ecs::{
 	component::Component,
-	entity::Entity,
 	system::{In, InMut, Query, Res},
 };
+use color_eyre::eyre;
 use ratatui::{
-	buffer::Buffer,
 	layout::{Constraint, Flex, Layout, Position},
 	style::{Color, Stylize as _},
 	widgets::{Block, Padding, Widget as _, WidgetRef as _},
 };
 
-use crate::ecs::{Area, CursorPos, RenderSystem};
+use crate::ecs::{Area, CursorPos, RenderInput, RenderSystem};
 
 #[derive(Debug, Clone, Copy)]
 pub enum NavbarButtonType {
@@ -51,13 +50,12 @@ impl NavbarButtonComponent {
 	}
 
 	fn render(
-		(In(entity), InMut(buf)): (In<Entity>, InMut<Buffer>),
-		query: Query<&Self>,
-		areas: Query<&Area>,
+		(In(entity), InMut(buf)): RenderInput,
+		query: Query<(&Self, &Area)>,
 		cursor: Res<CursorPos>,
-	) {
-		let comp = query.get(entity).expect("?");
-		let area = **areas.get(entity).expect("?");
+	) -> eyre::Result<()> {
+		let (comp, area) = query.get(entity)?;
+		let area = **area;
 
 		let hovered = area.contains(Position::new(cursor.x, cursor.y));
 
@@ -72,5 +70,7 @@ impl NavbarButtonComponent {
 		format!("{} {}", comp.icon(), comp.text())
 			.bold()
 			.render(text_area, buf);
+
+		Ok(())
 	}
 }
