@@ -27,8 +27,8 @@ name = "zankyouctl"
 path = "src/zankyouctl/main.rs"
 
 [dependencies]
-zankyou-macros.workspace = true
 zankyou-parser.workspace = true
+thiserror.workspace = true
 bevy_ecs = "0.16.1"
 clap = { version = "4.5.41", features = [
     "derive",
@@ -52,7 +52,7 @@ strum = { version = "0.27.2", features = ["derive"] }
 tokio = { version = "1.46.1", features = ["full"] }
 tokio-util = "0.7.15"
 toml = "0.9.2"
-thiserror = "2.0.14"
+sqlx = { version = "0.8.6", features = ["runtime-tokio", "sqlite"] }
 
 [build-dependencies]
 anyhow = "1.0.98"

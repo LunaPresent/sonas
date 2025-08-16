@@ -12,5 +12,6 @@ keywords = ["music", "lyrics", "synced-lyrics"]
 categories = ["multimedia::audio"]
 
 [workspace.dependencies]
+thiserror = "2.0.14"
 zankyou-parser.path = "./zankyou-parser"
 zankyou-macros.path = "./zankyou-macros"

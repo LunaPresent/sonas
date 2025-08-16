@@ -1,39 +1,53 @@
-use {
-	interprocess::local_socket::{
-		GenericNamespaced, ListenerOptions,
-		tokio::{Stream, prelude::*},
-	},
-	std::io,
-	tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader},
-	zankyou::Command,
+use std::io;
+use thiserror::Error;
+use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
+use zankyou::{Command, Database, server};
+
+use interprocess::local_socket::{
+	ListenerOptions,
+	tokio::{Listener, Stream, prelude::*},
 };
 
-#[tokio::main]
-async fn main() -> io::Result<()> {
-	let printname = "zankyoud.sock";
-	let name = printname.to_ns_name::<GenericNamespaced>()?;
+#[derive(Debug, Error)]
+enum Error {
+	#[error("IO error occured: {0}")]
+	IoError(#[from] io::Error),
+	#[error("Database error occured: {0}")]
+	DatabaseError(#[from] sqlx::Error),
+}
 
-	let opts = ListenerOptions::new().name(name);
-	let listener = opts.create_tokio()?;
+#[tokio::main]
+async fn main() -> Result<(), Error> {
+	let listener = ListenerOptions::new()
+		.name(server::name()?)
+		.create_tokio()?;
+
+	let database = Database::connect("db.sqlite").await?;
 
 	loop {
-		let conn = match listener.accept().await {
-			Ok(c) => c,
-			Err(e) => {
-				eprintln!("There was an error with an incoming connection: {e}");
-				continue;
-			}
+		let Err(error) = handle_connection(&listener, database.clone()).await else {
+			continue;
 		};
 
-		tokio::spawn(async move {
-			if let Err(e) = handle_conn(conn).await {
-				eprintln!("Error while handling connection: {e}");
-			}
-		});
+		eprintln!("Error with incoming connection: {error}");
 	}
 }
 
-async fn handle_conn(conn: Stream) -> io::Result<()> {
+async fn handle_connection(listener: &Listener, database: Database) -> io::Result<()> {
+	let connection = listener.accept().await?;
+
+	tokio::spawn(async move {
+		let Err(error) = handle_command(connection, &database).await else {
+			return;
+		};
+
+		eprintln!("Error handling connection: {error}");
+	});
+
+	Ok(())
+}
+
+async fn handle_command(conn: Stream, database: &Database) -> io::Result<()> {
 	let mut recver = BufReader::new(&conn);
 	let mut sender = &conn;
 
@@ -41,8 +55,8 @@ async fn handle_conn(conn: Stream) -> io::Result<()> {
 	let _ = recver.read_line(&mut buf).await?;
 
 	let result = match buf.parse::<Command>() {
-		Ok(command) => format!("{:?}", command),
-		Err(error) => format!("{:?}", error),
+		Ok(command) => command.execute(),
+		Err(error) => format!("{error:?}"),
 	};
 
 	sender.write_all(&result.into_bytes()).await

@@ -1,4 +1,6 @@
-mod command;
+pub mod commands;
+pub mod database;
 pub mod server;
 
-pub use command::*;
+pub use commands::Command;
+pub use database::Database;

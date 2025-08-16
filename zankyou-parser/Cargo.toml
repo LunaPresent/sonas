@@ -9,4 +9,5 @@ categories.workspace = true
 repository.workspace = true
 
 [dependencies]
-thiserror = "2.0.12"
+thiserror.workspace = true
+zankyou-macros.workspace = true

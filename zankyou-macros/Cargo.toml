@@ -15,4 +15,3 @@ proc-macro = true
 quote = "1.0.40"
 syn = "2.0.104"
 convert_case = "0.8.0"
-zankyou-parser.workspace = true
