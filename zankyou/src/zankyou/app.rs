@@ -96,8 +96,10 @@ impl App {
 	fn map_key_events(&self, key_event: KeyEvent) -> Option<Event<AppEvent>> {
 		match key_event.code {
 			KeyCode::Esc | KeyCode::Char('q') => Some(Event::App(AppEvent::Quit)),
-			KeyCode::Char('k') => Some(Event::App(AppEvent::Increment)),
-			KeyCode::Char('j') => Some(Event::App(AppEvent::Decrement)),
+			KeyCode::Char('j') => Some(Event::App(AppEvent::CursorDown)),
+			KeyCode::Char('k') => Some(Event::App(AppEvent::CursorUp)),
+			KeyCode::Char('h') => Some(Event::App(AppEvent::CursorLeft)),
+			KeyCode::Char('l') => Some(Event::App(AppEvent::CursorRight)),
 			_ => None,
 		}
 	}

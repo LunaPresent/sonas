@@ -1,8 +1,10 @@
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum AppEvent {
 	Quit,
-	Increment,
-	Decrement,
+	CursorDown,
+	CursorUp,
+	CursorLeft,
+	CursorRight,
 }
 
 impl crate::event::AppEvent for AppEvent {

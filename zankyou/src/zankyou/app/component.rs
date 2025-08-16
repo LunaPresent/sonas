@@ -1,3 +1,4 @@
+mod album_card;
 mod control_panel;
 mod library;
 mod navbar;
@@ -6,6 +7,7 @@ mod root;
 
 pub use root::RootComponent;
 
+use album_card::AlbumCardComponent;
 use control_panel::ControlPanelComponent;
 use library::LibraryComponent;
 use navbar::NavbarComponent;
