@@ -5,12 +5,13 @@ use bevy_ecs::{
 	system::{In, InMut, Query, RunSystemOnce},
 	world::World,
 };
-use color_eyre::eyre::{self, OptionExt};
+use color_eyre::eyre;
 use derive_more::{Deref, DerefMut};
 use ratatui::{
 	buffer::Buffer,
 	layout::{Position, Rect, Size},
 };
+use thiserror::Error;
 
 use crate::ecs::ui_component::{RenderHandle, RenderSystemId};
 
@@ -25,13 +26,36 @@ pub struct Viewport {
 	pub size: Size,
 }
 
+#[derive(Debug, Error)]
+pub enum ViewportError {
+	#[error("viewport offset out of bounds")]
+	OffsetOutOfBounds,
+	#[error("viewport size too small for target area")]
+	TooSmall,
+	#[error("viewport component no longer exists")]
+	Missing,
+}
+
 impl Viewport {
 	pub fn area(&self) -> Rect {
 		(Position::ORIGIN, self.size).into()
 	}
 
+	pub fn clamp_offset(&mut self, target_area_size: Size) -> Result<(), ViewportError> {
+		if self.size.width < target_area_size.width || self.size.height < target_area_size.height {
+			return Err(ViewportError::TooSmall);
+		}
+
+		self.offset.x = self.offset.x.min(self.size.width - target_area_size.width);
+		self.offset.y = self
+			.offset
+			.y
+			.min(self.size.height - target_area_size.height);
+		Ok(())
+	}
+
 	fn resize_and_get_buf_mut(&mut self) -> &mut Buffer {
-		self.buf.area = self.area();
+		self.buf.resize(self.area());
 		&mut self.buf
 	}
 }
@@ -147,20 +171,31 @@ impl RenderContext {
 		while let Some(lease) = lease_stack.last()
 			&& index == lease.end
 		{
-			let (mut viewport, area) = query.get_mut(lease.entity)?.ok_or_eyre(
-				"Could not return viewport lease: viewport component no longer exists",
-			)?;
+			let (mut viewport, area) =
+				query.get_mut(lease.entity)?.ok_or(ViewportError::Missing)?;
 			std::mem::swap(&mut viewport.buf, buf);
 			lease_stack.pop();
 
-			Self::combine_viewports(buf, &viewport, **area);
+			Self::combine_viewports(buf, &viewport, **area)?;
 		}
 
 		Ok(())
 	}
 
-	fn combine_viewports(dst: &mut Buffer, src: &Viewport, area: Rect) {
+	fn combine_viewports(
+		dst: &mut Buffer,
+		src: &Viewport,
+		area: Rect,
+	) -> Result<(), ViewportError> {
 		let rect = area.intersection(dst.area);
+		if src.size.width < rect.width || src.size.height < rect.height {
+			return Err(ViewportError::TooSmall);
+		}
+		if src.offset.x > src.size.width - rect.width
+			|| src.offset.y > src.size.height - rect.height
+		{
+			return Err(ViewportError::OffsetOutOfBounds);
+		}
 
 		for y_off in 0..rect.height {
 			let y_src = src.offset.y + y_off;
@@ -170,5 +205,7 @@ impl RenderContext {
 			dst.content[i_dst..i_dst + rect.width as usize]
 				.clone_from_slice(&src.buf.content[i_src..i_src + rect.width as usize]);
 		}
+
+		Ok(())
 	}
 }
