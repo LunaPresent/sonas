@@ -11,20 +11,12 @@ pub use ui_component::{
 	InitInput, InitSystem, RenderInput, RenderSystem, UpdateInput, UpdateSystem,
 };
 
-use std::marker::PhantomData;
-
-use bevy_ecs::{component::Component, entity::Entity, system::RunSystemOnce, world::World};
+use bevy_ecs::{component::Component, entity::Entity, world::World};
 use color_eyre::eyre;
 use ratatui::Frame;
 
-use crate::{
-	ecs::rendering::find_render_targets,
-	event::{Dispatch, Event, EventDispatch},
-};
-use event_handling::{
-	UpdateContext, find_broadcast_entities, find_cursor_entities, find_input_entities,
-	find_target_entities,
-};
+use crate::event::{Event, EventDispatch};
+use event_handling::UpdateContext;
 use init::init_components;
 use rendering::RenderContext;
 
@@ -35,9 +27,8 @@ where
 {
 	world: World,
 	root_entity: Entity,
-	update_targets: Vec<UpdateContext<E>>,
-	render_targets: Vec<RenderContext>,
-	phantom_data: PhantomData<E>,
+	update_context: UpdateContext<E>,
+	render_context: RenderContext,
 }
 
 impl<E> ComponentSystem<E>
@@ -64,55 +55,15 @@ where
 		ComponentSystem {
 			world,
 			root_entity,
-			update_targets: Vec::new(),
-			render_targets: Vec::new(),
-			phantom_data: PhantomData,
+			update_context: Default::default(),
+			render_context: Default::default(),
 		}
 	}
 
 	pub fn handle_event(&mut self, ed: EventDispatch<E>) -> eyre::Result<Option<Event<E>>> {
-		self.update_targets.clear();
-
-		match ed.dispatch {
-			Dispatch::Input => self
-				.world
-				.run_system_once_with(find_input_entities, &mut self.update_targets)?,
-			Dispatch::Broadcast => self
-				.world
-				.run_system_once_with(find_broadcast_entities, &mut self.update_targets)?,
-			Dispatch::Cursor { x, y } => self.world.run_system_cached_with(
-				find_cursor_entities,
-				(&mut self.update_targets, &ed.event, self.root_entity, x, y),
-			)?,
-			Dispatch::Target(target) => self
-				.world
-				.run_system_once_with(find_target_entities, (&mut self.update_targets, target))?,
-		}
-
-		let event = match ed.dispatch {
-			Dispatch::Broadcast => {
-				for context in self.update_targets.iter() {
-					let _ = self
-						.world
-						.run_system_with(context.system, (context.entity, &ed.event))?;
-				}
-				Some(ed.event)
-			}
-			_ => {
-				let mut full_propagate = true;
-				for context in self.update_targets.iter() {
-					let flow = self
-						.world
-						.run_system_with(context.system, (context.entity, &ed.event))??;
-					if flow == EventFlow::Consume {
-						full_propagate = false;
-						break;
-					}
-				}
-				if full_propagate { Some(ed.event) } else { None }
-			}
-		};
-
+		let event = self
+			.update_context
+			.handle_event(ed, &mut self.world, self.root_entity)?;
 		self.world.run_system_cached(init_components)?;
 
 		Ok(event)
@@ -124,18 +75,7 @@ where
 			.get_mut::<Area>(self.root_entity)
 			.expect("Root element must have an Area component") = frame.area();
 
-		self.render_targets.clear();
-
-		self.world.run_system_once_with(
-			find_render_targets,
-			(&mut self.render_targets, self.root_entity),
-		)?;
-
-		for context in self.render_targets.iter() {
-			self.world
-				.run_system_with(context.system, (context.entity, frame.buffer_mut()))??;
-		}
-
-		Ok(())
+		self.render_context
+			.render(frame.buffer_mut(), &mut self.world, self.root_entity)
 	}
 }
