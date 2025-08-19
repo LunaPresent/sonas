@@ -11,7 +11,9 @@ use ratatui::{
 };
 
 use super::{ControlPanelComponent, LibraryComponent, NavbarComponent};
-use crate::ecs::{Area, EntityCommandsExt as _, InitInput, InitSystem, RenderInput, RenderSystem};
+use crate::tui::ecs::{
+	Area, EntityCommandsExt as _, InitInput, InitSystem, RenderInput, RenderSystem,
+};
 
 #[derive(Debug, Component)]
 #[require(InitSystem::new(Self::init), RenderSystem::new(Self::render))]

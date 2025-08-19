@@ -10,13 +10,18 @@ use ratatui::{
 };
 
 use crate::{
-	app::app_event::AppEvent,
-	ecs::{Area, EventFlow, RenderInput, RenderSystem, UpdateInput, UpdateSystem},
-	event::Event,
+	app_event::AppEvent,
+	tui::{
+		ecs::{Area, EventFlow, RenderInput, RenderSystem, UpdateInput, UpdateSystem},
+		event::Event,
+	},
 };
 
 #[derive(Debug, Component, Default, Clone, Copy)]
-#[require(UpdateSystem::<AppEvent>::new(Self::update), RenderSystem::new(Self::render))]
+#[require(
+	UpdateSystem::<AppEvent>::new(Self::update),
+	RenderSystem::new(Self::render)
+)]
 pub struct ControlPanelComponent {
 	playing: bool,
 }

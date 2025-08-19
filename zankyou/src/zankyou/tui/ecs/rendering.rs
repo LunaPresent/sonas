@@ -1,7 +1,8 @@
 use bevy_ecs::{
 	component::Component,
 	entity::Entity,
-	hierarchy::Children,
+	hierarchy::{ChildOf, Children},
+	query::Without,
 	system::{In, InMut, Query, RunSystemOnce},
 	world::World,
 };
@@ -13,9 +14,9 @@ use ratatui::{
 };
 use thiserror::Error;
 
-use crate::ecs::ui_component::{RenderHandle, RenderSystemId};
+use super::ui_component::{RenderHandle, RenderSystemId};
 
-#[derive(Debug, Component, Default, Deref, DerefMut)]
+#[derive(Debug, Component, Default, Clone, Copy, Deref, DerefMut)]
 pub struct Area(Rect);
 
 #[derive(Debug, Component, Default)]
@@ -80,19 +81,12 @@ pub struct RenderContext {
 }
 
 impl RenderContext {
-	pub fn render(
-		&mut self,
-		buf: &mut Buffer,
-		world: &mut World,
-		root_entity: Entity,
-	) -> eyre::Result<()> {
+	pub fn render(&mut self, buf: &mut Buffer, area: Rect, world: &mut World) -> eyre::Result<()> {
 		self.render_queue.clear();
 		self.viewport_lease_stack.clear();
 
-		world.run_system_once_with(
-			Self::find_render_targets,
-			(&mut self.render_queue, root_entity),
-		)??;
+		world.run_system_once_with(Self::set_area_sizes, area)?;
+		world.run_system_once_with(Self::find_render_targets, &mut self.render_queue)??;
 
 		for (i, target) in self.render_queue.iter().enumerate() {
 			if let Some(system) = target.system {
@@ -114,11 +108,20 @@ impl RenderContext {
 		Ok(())
 	}
 
+	fn set_area_sizes(In(frame_area): In<Rect>, areas: Query<&mut Area>) {
+		for mut area in areas {
+			**area = frame_area;
+		}
+	}
+
 	fn find_render_targets(
-		(InMut(targets), In(root)): (InMut<Vec<EntityRenderInfo>>, In<Entity>),
+		InMut(targets): InMut<Vec<EntityRenderInfo>>,
+		root_entities: Query<Entity, Without<ChildOf>>,
 		query: Query<(Option<&RenderHandle>, Option<&Children>)>,
 	) -> eyre::Result<()> {
-		Self::recurse_render_targets(root, targets, query)?;
+		for root in root_entities {
+			Self::recurse_render_targets(root, targets, query)?;
+		}
 		Ok(())
 	}
 

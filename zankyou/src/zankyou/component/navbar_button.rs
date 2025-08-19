@@ -9,7 +9,7 @@ use ratatui::{
 	widgets::{Block, Padding, Widget as _, WidgetRef as _},
 };
 
-use crate::ecs::{Area, CursorPos, RenderInput, RenderSystem};
+use crate::tui::ecs::{Area, CursorPos, RenderInput, RenderSystem};
 
 #[derive(Debug, Clone, Copy)]
 pub enum NavbarButtonType {

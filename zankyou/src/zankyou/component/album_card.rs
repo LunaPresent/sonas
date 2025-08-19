@@ -9,7 +9,7 @@ use ratatui::{
 	widgets::{Block, BorderType, Borders, WidgetRef as _},
 };
 
-use crate::ecs::{Area, Focus, RenderInput, RenderSystem};
+use crate::tui::ecs::{Area, Focus, RenderInput, RenderSystem};
 
 #[derive(Debug, Component, Default)]
 #[require(RenderSystem::new(Self::render))]

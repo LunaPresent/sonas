@@ -10,8 +10,7 @@ use color_eyre::eyre;
 use derive_more::Deref;
 use ratatui::buffer::Buffer;
 
-use super::{Area, event_handling::EventFlow};
-use crate::event::Event;
+use super::{Area, Event, EventFlow};
 
 pub type InitInput = In<Entity>;
 pub type UpdateInput<'a, E> = (In<Entity>, InRef<'a, Event<E>>);

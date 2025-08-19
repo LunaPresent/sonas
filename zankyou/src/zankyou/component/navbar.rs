@@ -8,7 +8,9 @@ use bevy_ecs::{
 use color_eyre::eyre;
 use ratatui::layout::{Constraint, Layout};
 
-use crate::ecs::{Area, EntityCommandsExt as _, InitInput, InitSystem, RenderInput, RenderSystem};
+use crate::tui::ecs::{
+	Area, EntityCommandsExt as _, InitInput, InitSystem, RenderInput, RenderSystem,
+};
 
 use super::{NavbarButtonComponent, navbar_button::NavbarButtonType};
 

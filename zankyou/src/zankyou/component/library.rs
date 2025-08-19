@@ -10,12 +10,14 @@ use ratatui::layout::{Flex, Layout};
 
 use super::AlbumCardComponent;
 use crate::{
-	app::app_event::AppEvent,
-	ecs::{
-		Area, EntityCommandsExt, EventFlow, Focus, InitInput, InitSystem, RenderInput,
-		RenderSystem, UpdateInput, UpdateSystem, Viewport,
+	app_event::AppEvent,
+	tui::{
+		ecs::{
+			Area, EntityCommandsExt, EventFlow, Focus, InitInput, InitSystem, RenderInput,
+			RenderSystem, UpdateInput, UpdateSystem, Viewport,
+		},
+		event::Event,
 	},
-	event::Event,
 };
 
 #[derive(Debug, Component, Default)]
@@ -93,6 +95,9 @@ impl LibraryComponent {
 		let rows =
 			Layout::vertical(iter::repeat_n(card_height, vertical_fit)).spacing(vertical_gap);
 
+		for i in 0..50 {
+			**areas.get_mut(comp.album_cards[i])? = Default::default();
+		}
 		for (y, &row) in rows.split(area).iter().enumerate() {
 			for (x, &column) in columns.split(row).iter().enumerate() {
 				let i = x + y * horizontal_fit;

@@ -6,7 +6,7 @@ use bevy_ecs::{
 };
 use color_eyre::eyre;
 
-use crate::ecs::ui_component::InitHandle;
+use super::ui_component::InitHandle;
 
 pub fn init_components(
 	query: Query<(&InitHandle, Entity), Added<InitHandle>>,

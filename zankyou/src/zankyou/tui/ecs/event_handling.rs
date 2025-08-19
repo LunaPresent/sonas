@@ -1,19 +1,18 @@
 use bevy_ecs::{
 	entity::Entity,
 	hierarchy::{ChildOf, Children},
-	relationship::RelationshipTarget,
+	query::Without,
 	resource::Resource,
 	system::{In, InMut, InRef, Local, Query, Res, ResMut, RunSystemOnce as _},
 	world::World,
 };
 use color_eyre::eyre;
-use crossterm::event::MouseEventKind;
+use crossterm::event::{MouseEvent, MouseEventKind};
 use ratatui::layout::Position;
 
-use super::Area;
-use crate::{
-	ecs::ui_component::{UpdateHandle, UpdateSystemId},
-	event::{Dispatch, Event, EventDispatch},
+use super::{
+	Area, Dispatch, Event, EventDispatch, Viewport,
+	ui_component::{UpdateHandle, UpdateSystemId},
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
@@ -25,6 +24,14 @@ pub enum EventFlow {
 #[derive(Debug, Resource)]
 pub struct Focus {
 	pub target: Entity,
+}
+
+impl Default for Focus {
+	fn default() -> Self {
+		Self {
+			target: Entity::PLACEHOLDER,
+		}
+	}
 }
 
 #[derive(Debug, Resource)]
@@ -75,7 +82,6 @@ where
 		&mut self,
 		ed: EventDispatch<E>,
 		world: &mut World,
-		root_entity: Entity,
 	) -> eyre::Result<Option<Event<E>>> {
 		self.update_queue.clear();
 
@@ -88,8 +94,8 @@ where
 			}
 			Dispatch::Cursor { x, y } => world.run_system_cached_with(
 				Self::find_cursor_entities,
-				(&mut self.update_queue, &ed.event, root_entity, x, y),
-			)?,
+				(&mut self.update_queue, &ed.event, x, y),
+			)??,
 			Dispatch::Target(target) => world.run_system_once_with(
 				Self::find_target_entities,
 				(&mut self.update_queue, target),
@@ -144,29 +150,41 @@ where
 		reason = "separating the tuple into a typedef makes it less clear what is going on"
 	)]
 	fn find_cursor_entities(
-		(InMut(targets), InRef(event), In(root), In(x), In(y)): (
+		(InMut(targets), InRef(event), In(x), In(y)): (
 			InMut<Vec<EntityUpdateInfo<E>>>,
 			InRef<Event<E>>,
-			In<Entity>,
 			In<u16>,
 			In<u16>,
 		),
 		mut clicked: Local<Option<Entity>>,
 		mut cursor_pos: ResMut<CursorPos>,
-		areas: Query<&Area>,
-		children: Query<&Children>,
+		broadcast_components: Query<(Entity, &UpdateHandle<E>)>,
+		root_entities: Query<Entity, Without<ChildOf>>,
+		areas: Query<(Option<&Area>, Option<&Children>, Option<&Viewport>)>,
 		handles: Query<&UpdateHandle<E>>,
 		parents: Query<&ChildOf>,
-	) {
+	) -> eyre::Result<()> {
 		cursor_pos.x = x;
 		cursor_pos.y = y;
 
-		let target = if let Event::Mouse(mouse_event) = event
-			&& let MouseEventKind::Up(_) | MouseEventKind::Drag(_) = mouse_event.kind
-		{
-			*clicked
-		} else {
-			Some(Self::find_cursor_target(root, x, y, areas, children))
+		let target = match event {
+			Event::Mouse(MouseEvent {
+				kind: MouseEventKind::Up(_) | MouseEventKind::Drag(_),
+				..
+			}) => *clicked,
+			Event::Mouse(MouseEvent {
+				kind: MouseEventKind::Moved,
+				..
+			}) => {
+				for (entity, handle) in broadcast_components {
+					targets.push(EntityUpdateInfo {
+						entity,
+						system: **handle,
+					});
+				}
+				return Ok(());
+			}
+			_ => Self::find_cursor_target(x, y, root_entities, areas)?,
 		};
 		if let Event::Mouse(mouse_event) = event {
 			match mouse_event.kind {
@@ -179,6 +197,7 @@ where
 		if let Some(target) = target {
 			Self::bubble_entities(target, targets, handles, parents);
 		}
+		Ok(())
 	}
 
 	fn find_target_entities(
@@ -207,23 +226,57 @@ where
 	}
 
 	fn find_cursor_target(
-		entity: Entity,
 		x: u16,
 		y: u16,
-		areas: Query<&Area>,
-		children: Query<&Children>,
-	) -> Entity {
-		for child in children
-			.get(entity)
-			.into_iter()
-			.flat_map(RelationshipTarget::iter)
-		{
-			if let Ok(area) = areas.get(child)
-				&& area.contains(Position { x, y })
+		root_entities: Query<Entity, Without<ChildOf>>,
+		areas: Query<(Option<&Area>, Option<&Children>, Option<&Viewport>)>,
+	) -> eyre::Result<Option<Entity>> {
+		for entity in root_entities {
+			if let Some(target) = Self::find_cursor_target_inner(Position { x, y }, entity, areas)?
 			{
-				return Self::find_cursor_target(child, x, y, areas, children);
+				return Ok(Some(target));
 			}
 		}
-		entity
+		Ok(None)
+	}
+
+	/// result is based on the following "truth table"
+	///
+	/// | has area | in area | has children | result........... |
+	/// | -------- | ------- | ------------ | ----------------- |
+	/// | .......0 | ....../ | ...........0 | none............. |
+	/// | .......1 | ......0 | ...........0 | none............. |
+	/// | .......1 | ......1 | ...........0 | self............. |
+	/// | .......0 | ....../ | ...........1 | recurse then none |
+	/// | .......1 | ......0 | ...........1 | none............. |
+	/// | .......1 | ......1 | ...........1 | recurse then self |
+	fn find_cursor_target_inner(
+		mut pos: Position,
+		entity: Entity,
+		areas: Query<(Option<&Area>, Option<&Children>, Option<&Viewport>)>,
+	) -> eyre::Result<Option<Entity>> {
+		let (area, children, viewport) = areas.get(entity)?;
+		if let Some(area) = area
+			&& !area.contains(pos)
+		{
+			Ok(None)
+		} else {
+			if let (Some(area), Some(viewport)) = (area, viewport) {
+				pos.x = pos.x - area.x + viewport.offset.x;
+				pos.y = pos.y - area.y + viewport.offset.y;
+			}
+			if let Some(children) = children {
+				for &child in children {
+					if let Some(target) = Self::find_cursor_target_inner(pos, child, areas)? {
+						return Ok(Some(target));
+					}
+				}
+			}
+			if area.is_some() {
+				Ok(Some(entity))
+			} else {
+				Ok(None)
+			}
+		}
 	}
 }

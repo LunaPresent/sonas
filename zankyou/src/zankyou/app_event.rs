@@ -1,3 +1,5 @@
+use crate::tui::event;
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum AppEvent {
 	Quit,
@@ -7,7 +9,7 @@ pub enum AppEvent {
 	CursorRight,
 }
 
-impl crate::event::AppEvent for AppEvent {
+impl event::AppEvent for AppEvent {
 	fn is_quit(&self) -> bool {
 		self == &Self::Quit
 	}
