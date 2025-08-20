@@ -2,6 +2,7 @@ use bevy_ecs::{
 	bundle::Bundle, hierarchy::ChildOf, relationship::Relationship, system::EntityCommands,
 };
 
+// TODO: documentation
 pub trait EntityCommandsExt {
 	fn spawn_child(&mut self, bundle: impl Bundle) -> EntityCommands<'_>;
 	fn spawn_related<R: Relationship>(&mut self, bundle: impl Bundle) -> EntityCommands<'_>;

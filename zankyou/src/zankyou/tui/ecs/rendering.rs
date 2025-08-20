@@ -16,9 +16,11 @@ use thiserror::Error;
 
 use super::ui_component::{RenderHandle, RenderSystemId};
 
+// TODO: documentation
 #[derive(Debug, Component, Default, Clone, Copy, Deref, DerefMut)]
 pub struct Area(Rect);
 
+// TODO: documentation
 #[derive(Debug, Component, Default)]
 #[require(Area)]
 pub struct Viewport {
@@ -27,6 +29,7 @@ pub struct Viewport {
 	pub size: Size,
 }
 
+// TODO: documentation
 #[derive(Debug, Error)]
 pub enum ViewportError {
 	#[error("viewport offset out of bounds")]
@@ -75,7 +78,7 @@ struct ViewportLease {
 }
 
 #[derive(Debug, Default)]
-pub struct RenderContext {
+pub(super) struct RenderContext {
 	render_queue: Vec<EntityRenderInfo>,
 	viewport_lease_stack: Vec<ViewportLease>,
 }

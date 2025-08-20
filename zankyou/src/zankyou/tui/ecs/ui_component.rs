@@ -12,14 +12,18 @@ use ratatui::buffer::Buffer;
 
 use super::{Area, Event, EventFlow};
 
+// TODO: documentation
 pub type InitInput = In<Entity>;
+// TODO: documentation
 pub type UpdateInput<'a, E> = (In<Entity>, InRef<'a, Event<E>>);
+// TODO: documentation
 pub type RenderInput<'a> = (In<Entity>, InMut<'a, Buffer>);
 
-pub type InitSystemId = SystemId<InitInput, eyre::Result<()>>;
-pub type UpdateSystemId<E> = SystemId<UpdateInput<'static, E>, eyre::Result<EventFlow>>;
-pub type RenderSystemId = SystemId<RenderInput<'static>, eyre::Result<()>>;
+pub(super) type InitSystemId = SystemId<InitInput, eyre::Result<()>>;
+pub(super) type UpdateSystemId<E> = SystemId<UpdateInput<'static, E>, eyre::Result<EventFlow>>;
+pub(super) type RenderSystemId = SystemId<RenderInput<'static>, eyre::Result<()>>;
 
+// TODO: documentation
 #[derive(Component)]
 #[component(on_add = Self::register_system)]
 pub struct InitSystem {
@@ -27,6 +31,7 @@ pub struct InitSystem {
 }
 
 impl InitSystem {
+	// TODO: documentation
 	pub fn new<M, S>(system: S) -> Self
 	where
 		M: Sync + Send + 'static,
@@ -55,6 +60,7 @@ impl InitSystem {
 	}
 }
 
+// TODO: documentation
 #[derive(Component)]
 #[component(on_add = Self::register_system)]
 pub struct UpdateSystem<E>
@@ -71,6 +77,7 @@ impl<E> UpdateSystem<E>
 where
 	E: Sync + Send + 'static,
 {
+	// TODO: documentation
 	pub fn new<M, S>(system: S) -> Self
 	where
 		M: Sync + Send + 'static,
@@ -101,6 +108,7 @@ where
 	}
 }
 
+// TODO: documentation
 #[derive(Component)]
 #[component(on_add = Self::register_system)]
 pub struct RenderSystem {
@@ -109,6 +117,7 @@ pub struct RenderSystem {
 }
 
 impl RenderSystem {
+	// TODO: documentation
 	pub fn new<M, S>(system: S) -> Self
 	where
 		M: Sync + Send + 'static,
@@ -135,16 +144,16 @@ impl RenderSystem {
 }
 
 #[derive(Debug, Component, Clone, Copy, Deref)]
-pub struct InitHandle(InitSystemId);
+pub(super) struct InitHandle(InitSystemId);
 
 #[derive(Debug, Component, Clone, Copy, Deref)]
-pub struct UpdateHandle<E>(UpdateSystemId<E>)
+pub(super) struct UpdateHandle<E>(UpdateSystemId<E>)
 where
 	E: 'static;
 
 #[derive(Debug, Component, Clone, Copy, Deref)]
 #[require(Area)]
-pub struct RenderHandle(RenderSystemId);
+pub(super) struct RenderHandle(RenderSystemId);
 
 trait GenericSystemRegistrar<I, O>
 where
@@ -173,7 +182,7 @@ where
 	M: Sync + Send + 'static,
 	S: IntoSystem<I, O, M> + Sync + Send + Clone + 'static,
 {
-	pub fn new(system: S) -> Self {
+	fn new(system: S) -> Self {
 		Self {
 			system,
 			phantom_data: PhantomData,

@@ -8,7 +8,7 @@ use color_eyre::eyre;
 
 use super::ui_component::InitHandle;
 
-pub fn init_components(
+pub(super) fn init_components(
 	query: Query<(&InitHandle, Entity), Added<InitHandle>>,
 	mut commands: Commands,
 ) {

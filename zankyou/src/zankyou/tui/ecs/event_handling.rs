@@ -15,12 +15,31 @@ use super::{
 	ui_component::{UpdateHandle, UpdateSystemId},
 };
 
+/// Signify whether an [`update system`][us] should consume or propagate an event
+///
+/// This value must be returned from an [`update system`][us] to tell the dispatcher
+/// how it should handle the event after running the system with it
+/// The value is ignored if the event was dispatched as [`Dispatch::Broadcast`]
+///
+/// [us]: super::UpdateSystem
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
 pub enum EventFlow {
+	/// Signal to the system dispatcher to stop propagating the event
 	Consume,
+	/// Signal to the system dispatcher to bubble the event up the hierarchy,
+	/// calling the parent entity's update system with the same event
 	Propagate,
 }
 
+/// Global resource that marks the currently focussed entity
+///
+/// It can be set during app setup, using [`App::with_focussed_component`][wfc]
+/// or it can be manually modified in a system using a [`ResMut<Focus>`] parameter
+///
+/// This resource is automatically added to the world at the start of execution
+/// If no entity has been focussed the target will be [`Entity::PLACEHOLDER`]
+///
+/// [wfc]: crate::tui::app::App::with_focussed_component
 #[derive(Debug, Resource)]
 pub struct Focus {
 	pub target: Entity,
@@ -34,6 +53,8 @@ impl Default for Focus {
 	}
 }
 
+/// Global resource that holds the last reported cursor position.
+/// This resource is automatically added to the world at the start of execution
 #[derive(Debug, Resource)]
 pub struct CursorPos {
 	pub x: u16,
@@ -59,7 +80,7 @@ where
 }
 
 #[derive(Debug)]
-pub struct UpdateContext<E>
+pub(super) struct UpdateContext<E>
 where
 	E: 'static,
 {

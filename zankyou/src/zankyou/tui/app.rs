@@ -12,21 +12,23 @@ use super::{
 	terminal::Terminal,
 };
 
+// TODO: documentation
 #[derive(Debug)]
 pub struct App<E>
 where
 	E: 'static,
 {
-	pub should_quit: bool,
-	pub should_suspend: bool,
-	pub events: EventQueue<E>,
-	pub ecs: ComponentSystem<E>,
+	should_quit: bool,
+	should_suspend: bool,
+	events: EventQueue<E>,
+	ecs: ComponentSystem<E>,
 }
 
 impl<E> App<E>
 where
 	E: AppEvent + Send + Sync + Clone + 'static,
 {
+	// TODO: documentation
 	pub fn new() -> Self {
 		Self {
 			should_quit: false,
@@ -36,6 +38,7 @@ where
 		}
 	}
 
+	// TODO: documentation
 	pub fn with_component<B>(mut self, component_bundle: B) -> Self
 	where
 		B: Bundle,
@@ -44,6 +47,7 @@ where
 		self
 	}
 
+	// TODO: documentation
 	pub fn with_focussed_component<B>(mut self, component_bundle: B) -> Self
 	where
 		B: Bundle,
@@ -53,6 +57,7 @@ where
 		self
 	}
 
+	// TODO: documentation
 	pub async fn run(mut self) -> eyre::Result<()> {
 		self.ecs.init()?;
 		let mut tui = Terminal::new()?;

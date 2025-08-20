@@ -21,7 +21,7 @@ use init::init_components;
 use rendering::RenderContext;
 
 #[derive(Debug)]
-pub struct ComponentSystem<E>
+pub(super) struct ComponentSystem<E>
 where
 	E: 'static,
 {

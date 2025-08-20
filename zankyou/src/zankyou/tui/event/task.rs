@@ -8,7 +8,7 @@ use super::{Dispatch, Event, EventDispatch, EventSender};
 const TPS: f64 = 8.0;
 const FPS: f64 = 30.0;
 
-pub struct EventTask<E> {
+pub(super) struct EventTask<E> {
 	sender: mpsc::UnboundedSender<EventDispatch<E>>,
 }
 
