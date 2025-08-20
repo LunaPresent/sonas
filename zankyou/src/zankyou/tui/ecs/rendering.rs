@@ -165,6 +165,7 @@ impl RenderContext {
 	) -> eyre::Result<()> {
 		if let Some((mut viewport, _)) = query.get_mut(entity)? {
 			std::mem::swap(viewport.resize_and_get_buf_mut(), buf);
+			buf.reset();
 			lease_stack.push(ViewportLease {
 				entity,
 				end: index + child_count,
