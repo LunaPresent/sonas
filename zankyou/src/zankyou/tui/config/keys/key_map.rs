@@ -142,7 +142,7 @@ impl<E> KeyMap<E> {
 					match_start = middle + 1;
 				}
 			}
-			if match_start > match_end {
+			if match_start >= match_end {
 				break None;
 			}
 		};
