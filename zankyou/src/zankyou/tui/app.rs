@@ -4,11 +4,9 @@ use bevy_ecs::bundle::Bundle;
 use color_eyre::eyre;
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
-use crate::tui::event::{AppEvent, EventSender};
-
 use super::{
 	ecs::ComponentSystem,
-	event::{Event, EventDispatch, EventQueue},
+	event::{AppEvent, Event, EventSystem},
 	terminal::Terminal,
 };
 
@@ -20,22 +18,22 @@ where
 {
 	should_quit: bool,
 	should_suspend: bool,
-	events: EventQueue<E>,
+	event_system: EventSystem<E>,
 	ecs: ComponentSystem<E>,
 }
 
 impl<E> App<E>
 where
-	E: AppEvent + Send + Sync + Clone + 'static,
+	E: AppEvent + Send + Sync + 'static,
 {
 	// TODO: documentation
 	pub fn new() -> Self {
-		let events = EventQueue::new();
-		let ecs = ComponentSystem::new(events.sender().clone());
+		let event_system = EventSystem::new();
+		let ecs = ComponentSystem::new(event_system.sender());
 		Self {
 			should_quit: false,
 			should_suspend: false,
-			events,
+			event_system,
 			ecs,
 		}
 	}
@@ -63,11 +61,12 @@ where
 
 	// TODO: documentation
 	pub async fn run(mut self) -> eyre::Result<()> {
-		self.ecs.init()?;
 		let mut tui = Terminal::new()?;
 		tui.enter()?;
+		self.ecs.init()?;
+		self.event_system.start()?;
 		while !self.should_quit {
-			let mut next_ed = Some(self.events.next().await?);
+			let mut next_ed = Some(self.event_system.next().await?);
 			while let Some(ed) = next_ed {
 				let result = self.ecs.handle_event(ed)?;
 				if let Some(event) = result.propagated {
@@ -77,11 +76,15 @@ where
 			}
 			if self.should_suspend {
 				self.should_suspend = false;
+				self.event_system.stop().await?;
 				tui.suspend()?;
+
 				tui.clear()?;
 				tui.resume()?;
+				self.event_system.start()?;
 			}
 		}
+		self.event_system.stop().await?;
 		tui.exit()?;
 		Ok(())
 	}

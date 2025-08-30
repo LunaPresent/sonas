@@ -95,16 +95,24 @@ where
 		event: Event<E>,
 		world: &mut World,
 	) -> eyre::Result<Option<Event<E>>> {
+		let mut consume = false;
+		let mut prev_entity = Entity::PLACEHOLDER;
+
 		for target in &self.update_queue {
+			// make multiple systems on one entity order independent by firing all of them even if
+			// one returned consume
+			if consume && prev_entity != target.entity {
+				break;
+			}
+			prev_entity = target.entity;
+
 			let flow = world.run_system_with(target.system, (target.entity, &event))??;
 			match flow {
-				EventFlow::Consume => {
-					return Ok(None);
-				}
+				EventFlow::Consume => consume = true,
 				EventFlow::Propagate => (),
 			}
 		}
-		Ok(Some(event))
+		if consume { Ok(None) } else { Ok(Some(event)) }
 	}
 
 	fn find_input_entities(

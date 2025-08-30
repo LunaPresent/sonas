@@ -1,5 +1,3 @@
-use std::path::PathBuf;
-
 use bevy_ecs::{
 	component::Component,
 	system::{Commands, In, Query},
@@ -12,7 +10,7 @@ use crate::tui::ecs::{InitInput, InitSystem};
 #[derive(Debug)]
 enum ConfigSource<C> {
 	Value(Option<C>),
-	FilePath(PathBuf),
+	// TODO: add another source type to be able to do file watch
 }
 
 #[derive(Debug, Component)]
@@ -34,12 +32,6 @@ where
 		}
 	}
 
-	pub fn from_file_path(path: impl Into<PathBuf>) -> Self {
-		Self {
-			source: ConfigSource::FilePath(path.into()),
-		}
-	}
-
 	fn init(
 		In(entity): InitInput,
 		mut query: Query<&mut Self>,
@@ -50,7 +42,6 @@ where
 			ConfigSource::Value(value) => value
 				.take()
 				.expect("init should never be run more than once, so this should never be None"),
-			ConfigSource::FilePath(path) => todo!(),
 		};
 
 		cmd.insert_resource(Config(config));
