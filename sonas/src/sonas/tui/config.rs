@@ -1,15 +1,16 @@
-mod config_manager;
-mod keys;
+mod action;
+mod error;
+mod key_chord;
+mod key_config;
+mod key_handler;
+mod key_map;
+mod key_sequence;
 mod util;
 
-pub use config_manager::*;
-pub use keys::*;
-
-use bevy_ecs::resource::Resource;
-use derive_more::{Deref, DerefMut};
-
-/// A bevy resouce wrapper around the user defined config
-///
-/// The recommended way to spawn this in the ecs is using [`ConfigManager`]
-#[derive(Debug, Resource, Deref, DerefMut)]
-pub struct Config<C>(C);
+pub use action::*;
+pub use error::*;
+pub use key_chord::*;
+pub use key_config::*;
+pub use key_handler::*;
+pub use key_map::*;
+pub use key_sequence::*;

@@ -1,13 +1,15 @@
+mod config_manager;
 mod input_action;
+mod keys;
+
+pub use config_manager::ConfigManager;
+pub use keys::Keys;
 
 use serde::Deserialize;
-
-use crate::tui::config::KeyConfig;
-use input_action::InputAction;
 
 #[derive(Debug, Default, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 #[serde(default)]
-pub struct UserConfig {
-	pub keys: KeyConfig<InputAction>,
+pub struct Config {
+	pub keys: Keys,
 }

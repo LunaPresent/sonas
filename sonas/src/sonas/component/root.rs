@@ -8,9 +8,9 @@ use ratatui::layout::{Constraint, Layout};
 
 use super::{ControlPanelComponent, LibraryComponent, NavbarComponent};
 use crate::{
-	config::UserConfig,
+	config::Keys,
 	tui::{
-		config::{Config, KeyHandler},
+		config::KeyHandler,
 		ecs::{Area, EntityCommandsExt as _, InitInput, InitSystem, RenderInput, RenderSystem},
 	},
 };
@@ -36,13 +36,13 @@ impl Default for RootComponent {
 impl RootComponent {
 	fn init(
 		In(entity): InitInput,
-		config: Res<Config<UserConfig>>,
+		key_config: Res<Keys>,
 		mut query: Query<&mut Self>,
 		mut cmd: Commands,
 	) -> eyre::Result<()> {
 		let mut comp = query.get_mut(entity)?;
 		let mut ec = cmd.entity(entity);
-		ec.insert_if_new(KeyHandler::new(config.keys.generate_key_map()));
+		ec.insert_if_new(KeyHandler::new(key_config.generate_key_map()));
 		comp.control_panel = ec.spawn_child(ControlPanelComponent::default()).id();
 		comp.nav_bar = ec.spawn_child(NavbarComponent::default()).id();
 		comp.library = ec.spawn_child(LibraryComponent::default()).id();
