@@ -6,8 +6,7 @@ use serde::{
 	ser::SerializeMap as _,
 };
 
-use super::{Action, KeyMap, KeyMapping, KeySequence};
-use crate::tui::config::util::OneOrMany;
+use super::{Action, KeyMap, KeyMapping, KeySequence, util::OneOrMany};
 
 #[derive(Debug)]
 struct InputMapping<A> {
