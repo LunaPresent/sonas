@@ -142,6 +142,10 @@ where
 		clippy::type_complexity,
 		reason = "separating the tuple into a typedef makes it less clear what is going on"
 	)]
+	#[allow(
+		clippy::too_many_arguments,
+		reason = "most of the arguments are injected by bevy"
+	)]
 	fn find_cursor_entities(
 		(InMut(targets), InRef(event), In(x), In(y)): (
 			InMut<Vec<EntityUpdateInfo<E>>>,

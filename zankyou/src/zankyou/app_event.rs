@@ -21,6 +21,7 @@ pub enum Direction {
 }
 
 impl Direction {
+	#[allow(dead_code)]
 	pub fn x(self) -> i16 {
 		match self {
 			Self::Left => -1,

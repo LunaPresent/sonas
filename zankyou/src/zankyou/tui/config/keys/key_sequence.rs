@@ -1,17 +1,16 @@
-use std::ops::Deref;
-use std::{fmt, str::FromStr};
+use std::{fmt, ops::Deref, str::FromStr};
 
 use serde_with::{DeserializeFromStr, SerializeDisplay};
 use smallvec::SmallVec;
 
-use super::error::KeyChordParseError;
-use super::key_chord::KeyChord;
+use super::{KeyChord, KeyChordParseError};
 
 #[derive(
 	Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, SerializeDisplay, DeserializeFromStr,
 )]
 pub struct KeySequence(SmallVec<[KeyChord; 4]>);
 
+#[allow(dead_code)]
 impl KeySequence {
 	pub fn from_vec(vec: Vec<KeyChord>) -> Self {
 		Self(SmallVec::from_vec(vec))
@@ -56,13 +55,11 @@ impl FromStr for KeySequence {
 					in_tag = false;
 					key_chords.push(s[chord_start..idx].parse()?);
 				}
+			} else if c == '<' {
+				in_tag = true;
+				chord_start = idx + 1;
 			} else {
-				if c == '<' {
-					in_tag = true;
-					chord_start = idx + 1;
-				} else {
-					key_chords.push(s[idx..idx + 1].parse()?);
-				}
+				key_chords.push(s[idx..idx + 1].parse()?);
 			}
 		}
 

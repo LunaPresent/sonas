@@ -2,7 +2,7 @@ use std::{fmt, str::FromStr};
 
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
-use super::error::KeyChordParseError;
+use super::KeyChordParseError;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Hash)]
 pub struct KeyChord {
@@ -10,6 +10,10 @@ pub struct KeyChord {
 	pub mods: KeyModifiers,
 }
 
+#[allow(
+	clippy::derive_ord_xor_partial_ord,
+	reason = "crossterm mistakenly only implements PartialOrd and not Ord"
+)]
 impl Ord for KeyChord {
 	fn cmp(&self, other: &Self) -> std::cmp::Ordering {
 		self.partial_cmp(other).expect(

@@ -2,7 +2,7 @@ use std::cmp::Ordering;
 
 use derive_more::Deref;
 
-use super::{key_chord::KeyChord, key_sequence::KeySequence};
+use super::{KeyChord, KeySequence};
 
 type MapIdx = u16;
 
@@ -34,15 +34,15 @@ impl<E> KeyMapping<E> {
 /// ```
 /// // Example key map; the strings in the second argument represent an app event
 /// let key_mappings = vec![
-/// 	KeyMapping::new("G".parse().unwrap(), "cursor to bottom"),
-/// 	KeyMapping::new("gd".parse().unwrap(), "goto definition"),
-/// 	KeyMapping::new("gg".parse().unwrap(), "cursor to top"),
-/// 	KeyMapping::new("go".parse().unwrap(), "cursor to top"),
-/// 	KeyMapping::new("k".parse().unwrap(), "cursor up"),
-/// 	KeyMapping::new("j".parse().unwrap(), "cursor down"),
-/// 	KeyMapping::new("l".parse().unwrap(), "cursor right"),
-/// 	KeyMapping::new("h".parse().unwrap(), "cursor left"),
-/// 	KeyMapping::new("hi".parse().unwrap(), "omg hiiii"),
+///     KeyMapping::new("G".parse().unwrap(), "cursor to bottom"),
+///     KeyMapping::new("gd".parse().unwrap(), "goto definition"),
+///     KeyMapping::new("gg".parse().unwrap(), "cursor to top"),
+///     KeyMapping::new("go".parse().unwrap(), "cursor to top"),
+///     KeyMapping::new("k".parse().unwrap(), "cursor up"),
+///     KeyMapping::new("j".parse().unwrap(), "cursor down"),
+///     KeyMapping::new("l".parse().unwrap(), "cursor right"),
+///     KeyMapping::new("h".parse().unwrap(), "cursor left"),
+///     KeyMapping::new("hi".parse().unwrap(), "omg hiiii"),
 /// ];
 /// let key_map = KeyMap::from(key_mappings.clone());
 ///
@@ -192,7 +192,7 @@ impl KeyMapMatch {
 	///
 	/// A match is any key mapping for which the first n key chords of the key
 	/// sequence are equal to all n key chords recorded in this `KeyMapMatch`, in order
-	pub fn matches<'a, E>(self, key_map: &'a KeyMap<E>) -> &'a [KeyMapping<E>] {
+	pub fn matches<E>(self, key_map: &KeyMap<E>) -> &[KeyMapping<E>] {
 		let from = self.match_start as usize;
 		let to = (self.match_end as usize).min(key_map.len());
 		&key_map.0[from..to]
@@ -203,7 +203,7 @@ impl KeyMapMatch {
 	/// This is a subset of the set returned by [`KeyMapMatch::matches`],
 	/// To be precise: any match where the key sequence has the same length as
 	/// the amount of key chords recorded in this `KeyMapMatch` is a full match
-	pub fn full_matches<'a, E>(self, key_map: &'a KeyMap<E>) -> &'a [KeyMapping<E>] {
+	pub fn full_matches<E>(self, key_map: &KeyMap<E>) -> &[KeyMapping<E>] {
 		let from = self.match_start as usize;
 		let to = self.full_match_end as usize;
 		&key_map.0[from..to]
@@ -213,7 +213,7 @@ impl KeyMapMatch {
 	///
 	/// This is a subset of the set returned by [`KeyMapMatch::matches`],
 	/// Any match that isn't a full match is a partial match
-	pub fn partial_matches<'a, E>(self, key_map: &'a KeyMap<E>) -> &'a [KeyMapping<E>] {
+	pub fn partial_matches<E>(self, key_map: &KeyMap<E>) -> &[KeyMapping<E>] {
 		let from = self.full_match_end as usize;
 		let to = (self.match_end as usize).min(key_map.len());
 		&key_map.0[from..to]

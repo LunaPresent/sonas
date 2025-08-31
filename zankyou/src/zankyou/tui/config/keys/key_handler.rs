@@ -6,9 +6,8 @@ use bevy_ecs::{
 };
 use color_eyre::eyre;
 
-use super::KeyMap;
+use super::{KeyChord, KeyMap, KeyMapMatch};
 use crate::tui::{
-	config::{KeyChord, KeyMapMatch},
 	ecs::{EventFlow, EventQueue, UpdateInput, UpdateSystem},
 	event::{Dispatch, Event},
 };

@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 use bevy_ecs::resource::Resource;
 use tokio::sync::mpsc;
 
@@ -22,10 +23,10 @@ impl<E> AsyncEventQueue<E> {
 pub struct AsyncSender<E>(mpsc::UnboundedSender<EventDispatch<E>>);
 
 impl<E> AsyncSender<E> {
-	pub fn send(&mut self, dispatch: Dispatch, event: E) {
+	pub fn send(&mut self, dispatch: Dispatch, app_event: E) {
 		let _ = self.0.send(EventDispatch {
 			dispatch,
-			event: Event::App(event),
+			event: Event::App(app_event),
 		});
 	}
 }

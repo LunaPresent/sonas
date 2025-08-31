@@ -15,7 +15,7 @@ pub enum InputAction {
 impl Action for InputAction {
 	type AppEvent = AppEvent;
 
-	fn into_app_event(&self) -> Self::AppEvent {
+	fn app_event(&self) -> Self::AppEvent {
 		match *self {
 			InputAction::Quit => AppEvent::Quit,
 			InputAction::CursorUp => AppEvent::MoveCursor(Direction::Up),

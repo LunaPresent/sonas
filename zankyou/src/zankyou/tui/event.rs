@@ -21,6 +21,7 @@ impl<E> EventDispatch<E> {
 	}
 }
 
+#[allow(dead_code)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Dispatch {
 	Input,
@@ -33,6 +34,7 @@ pub trait AppEvent {
 	fn is_quit(&self) -> bool;
 }
 
+#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub enum Event<E> {
 	Tick(Duration),

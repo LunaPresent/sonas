@@ -153,7 +153,7 @@ impl RenderSystem {
 pub(super) struct InitHandle(InitSystemId);
 
 #[derive(Debug, Component, Clone, Deref)]
-pub(super) struct UpdateHandle<E>(SmallVec<[UpdateSystemId<E>; 4]>)
+pub(super) struct UpdateHandle<E>(SmallVec<[UpdateSystemId<E>; 3]>)
 where
 	E: 'static;
 

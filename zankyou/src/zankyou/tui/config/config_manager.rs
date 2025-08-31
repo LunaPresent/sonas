@@ -13,6 +13,17 @@ enum ConfigSource<C> {
 	// TODO: add another source type to be able to do file watch
 }
 
+/// Component that spawns a config resource on init
+///
+/// # Examples
+///
+/// ```no_run
+/// let config = UserConfig::new();
+/// let app = App::<AppEvent>::new()
+///     .with_component(ConfigManager::from_value(config))?
+///     .with_main_component(RootComponent::default())?;
+/// app.run().await?;
+/// ```
 #[derive(Debug, Component)]
 #[require(InitSystem::new(Self::init))]
 pub struct ConfigManager<C>

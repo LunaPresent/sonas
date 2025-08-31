@@ -6,11 +6,7 @@ use serde::{
 	ser::SerializeMap as _,
 };
 
-use super::{
-	action::Action,
-	key_map::{KeyMap, KeyMapping},
-	key_sequence::KeySequence,
-};
+use super::{Action, KeyMap, KeyMapping, KeySequence};
 use crate::tui::config::util::OneOrMany;
 
 #[derive(Debug)]
@@ -46,7 +42,7 @@ where
 			for input in &input_mapping.inputs {
 				vec.push(KeyMapping::new(
 					input.clone(),
-					input_mapping.action.into_app_event(),
+					input_mapping.action.app_event(),
 				));
 			}
 		}
@@ -145,7 +141,7 @@ mod tests {
 	impl Action for InputAction {
 		type AppEvent = AppEvent;
 
-		fn into_app_event(&self) -> Self::AppEvent {
+		fn app_event(&self) -> Self::AppEvent {
 			match *self {
 				InputAction::Quit => AppEvent::Quit,
 				InputAction::CursorUp => AppEvent::MoveCursor(Direction::Up),
