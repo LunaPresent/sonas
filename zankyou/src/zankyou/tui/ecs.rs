@@ -49,10 +49,7 @@ where
 		}
 	}
 
-	pub fn add_component<B>(&mut self, component_bundle: B) -> Entity
-	where
-		B: Bundle,
-	{
+	pub fn add_component(&mut self, component_bundle: impl Bundle) -> Entity {
 		self.world.spawn(component_bundle).id()
 	}
 
