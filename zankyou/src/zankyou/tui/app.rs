@@ -4,11 +4,9 @@ use bevy_ecs::bundle::Bundle;
 use color_eyre::eyre;
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
-use crate::tui::event::AppEvent;
-
 use super::{
 	ecs::ComponentSystem,
-	event::{Event, EventDispatch, EventQueue},
+	event::{AppEvent, Event, EventSystem},
 	terminal::Terminal,
 };
 
@@ -20,74 +18,81 @@ where
 {
 	should_quit: bool,
 	should_suspend: bool,
-	events: EventQueue<E>,
+	event_system: EventSystem<E>,
 	ecs: ComponentSystem<E>,
 }
 
 impl<E> App<E>
 where
-	E: AppEvent + Send + Sync + Clone + 'static,
+	E: AppEvent + Send + Sync + 'static,
 {
 	// TODO: documentation
 	pub fn new() -> Self {
+		let event_system = EventSystem::new();
+		let ecs = ComponentSystem::new(event_system.sender());
 		Self {
 			should_quit: false,
 			should_suspend: false,
-			events: EventQueue::new(),
-			ecs: ComponentSystem::new(),
+			event_system,
+			ecs,
 		}
 	}
 
-	// TODO: documentation
-	pub fn with_component<B>(mut self, component_bundle: B) -> Self
-	where
-		B: Bundle,
-	{
+	/// Adds a new component to the bevy ecs
+	pub fn with_component(mut self, component_bundle: impl Bundle) -> eyre::Result<Self> {
 		self.ecs.add_component(component_bundle);
-		self
+		self.ecs.init()?;
+		Ok(self)
 	}
 
-	// TODO: documentation
-	pub fn with_focussed_component<B>(mut self, component_bundle: B) -> Self
-	where
-		B: Bundle,
-	{
+	/// Adds a new component to the bevy ecs and focusses it
+	pub fn with_main_component(mut self, component_bundle: impl Bundle) -> eyre::Result<Self> {
 		let entity = self.ecs.add_component(component_bundle);
 		self.ecs.set_focus(entity);
-		self
+		self.ecs.init()?;
+		Ok(self)
 	}
 
 	// TODO: documentation
 	pub async fn run(mut self) -> eyre::Result<()> {
-		self.ecs.init()?;
 		let mut tui = Terminal::new()?;
 		tui.enter()?;
+		self.ecs.init()?;
+		self.event_system.start()?;
 		while !self.should_quit {
-			let ed = self.events.next().await?;
-			self.handle_event(&mut tui, ed)?;
+			let mut next_ed = Some(self.event_system.next().await?);
+			while let Some(ed) = next_ed {
+				let result = self.ecs.handle_event(ed)?;
+				if let Some(event) = result.propagated {
+					self.handle_propagated_event(&mut tui, event)?;
+				}
+				next_ed = result.requeued;
+			}
 			if self.should_suspend {
 				self.should_suspend = false;
+				self.event_system.stop().await?;
 				tui.suspend()?;
+
 				tui.clear()?;
 				tui.resume()?;
+				self.event_system.start()?;
 			}
 		}
+		self.event_system.stop().await?;
 		tui.exit()?;
 		Ok(())
 	}
 
-	fn handle_event(&mut self, tui: &mut Terminal, ed: EventDispatch<E>) -> eyre::Result<()> {
-		if let Some(event) = self.ecs.handle_event(ed)? {
-			match event {
-				Event::Render => {
-					tui.try_draw(|frame| self.ecs.draw(frame).map_err(io::Error::other))?;
-				}
-				Event::Key(key_event) => {
-					self.handle_special_keys(key_event);
-				}
-				Event::App(app_event) if app_event.is_quit() => self.should_quit = true,
-				_ => (),
+	fn handle_propagated_event(&mut self, tui: &mut Terminal, event: Event<E>) -> eyre::Result<()> {
+		match event {
+			Event::Render(_) => {
+				tui.try_draw(|frame| self.ecs.draw(frame).map_err(io::Error::other))?;
 			}
+			Event::Key(key_event) => {
+				self.handle_special_keys(key_event);
+			}
+			Event::App(app_event) if app_event.is_quit() => self.should_quit = true,
+			_ => (),
 		}
 		Ok(())
 	}
@@ -103,15 +108,4 @@ where
 			_ => (),
 		}
 	}
-
-	// fn map_key_events(&self, key_event: KeyEvent) -> Option<AppEvent> {
-	// 	match key_event.code {
-	// 		KeyCode::Esc | KeyCode::Char('q') => Some(AppEvent::Quit),
-	// 		KeyCode::Char('j') => Some(AppEvent::CursorDown),
-	// 		KeyCode::Char('k') => Some(AppEvent::CursorUp),
-	// 		KeyCode::Char('h') => Some(AppEvent::CursorLeft),
-	// 		KeyCode::Char('l') => Some(AppEvent::CursorRight),
-	// 		_ => None,
-	// 	}
-	// }
 }

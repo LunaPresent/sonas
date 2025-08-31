@@ -1,12 +1,13 @@
-mod queue;
-mod sender;
-mod task;
+mod error;
+mod system;
+
+pub use error::EventError;
+pub use system::EventSystem;
+
+use std::time::Duration;
 
 use bevy_ecs::entity::Entity;
 use crossterm::event::{KeyEvent, MouseEvent};
-
-pub use queue::EventQueue;
-pub use sender::EventSender;
 
 #[derive(Debug, Clone)]
 pub struct EventDispatch<E> {
@@ -14,18 +15,18 @@ pub struct EventDispatch<E> {
 	pub event: Event<E>,
 }
 
+impl<E> EventDispatch<E> {
+	pub fn new(dispatch: Dispatch, event: Event<E>) -> Self {
+		Self { dispatch, event }
+	}
+}
+
+#[allow(dead_code)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Dispatch {
 	Input,
 	Broadcast,
-	Cursor {
-		x: u16,
-		y: u16,
-	},
-	#[allow(
-		dead_code,
-		reason = "this is not constructed by system events, but may be used in app logic"
-	)]
+	Cursor { x: u16, y: u16 },
 	Target(Entity),
 }
 
@@ -33,20 +34,16 @@ pub trait AppEvent {
 	fn is_quit(&self) -> bool;
 }
 
+#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub enum Event<E> {
-	Tick,
-	Render,
+	Tick(Duration),
+	Render(Duration),
 	App(E),
 	FocusGained,
 	FocusLost,
 	Key(KeyEvent),
 	Mouse(MouseEvent),
-	#[allow(dead_code, reason = "inner value to be used by app logic")]
 	Paste(String),
-	#[allow(dead_code, reason = "inner value to be used by app logic")]
-	Resize {
-		width: u16,
-		height: u16,
-	},
+	Resize { width: u16, height: u16 },
 }
