@@ -71,8 +71,8 @@ jobs:
     - name: Build and upload binaries
       uses: taiki-e/upload-rust-binary-action@v1
       with:
-        archive: zankyou-$tag-${{ matrix.name }}
-        bin: zankyou,zankyoud,zankyouctl
+        archive: sonas-$tag-${{ matrix.name }}
+        bin: sonas,sonasd,sonasctl
         target: ${{ matrix.target }}
         tar: unix
         zip: windows

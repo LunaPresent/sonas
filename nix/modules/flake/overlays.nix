@@ -7,7 +7,7 @@
       inherit (prev.stdenv.hostPlatform) system;
     in
     if builtins.hasAttr system self.packages then
-      { zankyou = self.packages.${system}.default; }
+      { sonas = self.packages.${system}.default; }
     else
       { };
 }

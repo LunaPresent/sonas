@@ -3,8 +3,8 @@
     { pkgs, self', ... }:
     {
       devShells.default = pkgs.mkShell {
-        name = "zankyou";
-        meta.description = "Development environment for zankyou";
+        name = "sonas";
+        meta.description = "Development environment for sonas";
         RUST_SRC_PATH = builtins.toString pkgs.rust.packages.stable.rustPlatform.rustLibSrc;
 
         nativeBuildInputs = [

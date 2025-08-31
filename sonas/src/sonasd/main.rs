@@ -3,14 +3,14 @@ use {
 		GenericNamespaced, ListenerOptions,
 		tokio::{Stream, prelude::*},
 	},
+	sonas::Command,
 	std::io,
 	tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader},
-	zankyou::Command,
 };
 
 #[tokio::main]
 async fn main() -> io::Result<()> {
-	let printname = "zankyoud.sock";
+	let printname = "sonasd.sock";
 	let name = printname.to_ns_name::<GenericNamespaced>()?;
 
 	let opts = ListenerOptions::new().name(name);

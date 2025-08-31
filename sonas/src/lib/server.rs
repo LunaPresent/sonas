@@ -1,7 +1,7 @@
 use interprocess::local_socket::{GenericNamespaced, Name, Stream, ToNsName, prelude::*};
 use std::io::{self, BufRead, BufReader, Write};
 
-const NAME: &str = "zankyoud.sock";
+const NAME: &str = "sonasd.sock";
 
 pub fn send_bytes(data: &[u8]) -> io::Result<String> {
 	let name = name()?;

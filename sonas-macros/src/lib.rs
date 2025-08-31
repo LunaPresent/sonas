@@ -22,10 +22,10 @@ pub fn derive_command_category(input: TokenStream) -> TokenStream {
 
 	let expanded = quote! {
 		impl std::str::FromStr for #ident {
-			type Err = ::zankyou_parser::ParseCommandError;
+			type Err = ::sonas_parser::ParseCommandError;
 
 			fn from_str(string: &str) -> Result<Self, Self::Err> {
-				use ::zankyou_parser::*;
+				use ::sonas_parser::*;
 
 				let (category, rest) = match string.trim().split_once(' ') {
 					Some((category, rest)) => (category, rest),
@@ -125,10 +125,10 @@ pub fn derive_subcommand(input: TokenStream) -> TokenStream {
 
 	let expanded = quote! {
 		impl std::str::FromStr for #ident {
-			type Err = ::zankyou_parser::ParseCommandError;
+			type Err = ::sonas_parser::ParseCommandError;
 
 			fn from_str(string: &str) -> Result<Self, Self::Err> {
-				use ::zankyou_parser::*;
+				use ::sonas_parser::*;
 
 				let (subcommand, rest) = match string.split_once(' ') {
 					Some((subcommand, rest)) => (subcommand, rest),

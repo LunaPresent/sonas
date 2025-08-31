@@ -3,6 +3,6 @@
   perSystem =
     { pkgs, ... }:
     {
-      packages.default = pkgs.callPackage "${self}/nix/packages/zankyou" { };
+      packages.default = pkgs.callPackage "${self}/nix/packages/sonas" { };
     };
 }

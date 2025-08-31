@@ -1,6 +1,6 @@
-# zankyou
+# sonas
 
-[![CI](https://github.com/LunaPresent/zankyou/workflows/CI/badge.svg)](https://github.com/LunaPresent/zankyou/actions)
+[![CI](https://github.com/LunaPresent/sonas/workflows/CI/badge.svg)](https://github.com/LunaPresent/sonas/actions)
 
 A modern terminal music player written in Rust
 

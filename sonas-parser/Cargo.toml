@@ -1,5 +1,5 @@
 [package]
-name = "zankyou-parser"
+name = "sonas-parser"
 version.workspace = true
 edition.workspace = true
 authors.workspace = true

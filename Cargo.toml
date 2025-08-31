@@ -1,16 +1,16 @@
 [workspace]
 resolver = "3"
-members = ["zankyou", "zankyou-macros", "zankyou-parser"]
+members = ["sonas", "sonas-macros", "sonas-parser"]
 
 [workspace.package]
 version = "0.1.0"
 edition = "2024"
 license = "EUPL-1.2"
-repository = "https://github.com/LunaPresent/zankyou"
+repository = "https://github.com/LunaPresent/sonas"
 authors = ["Luna Present <code@lunapresent.net>", "Luna Heyman <luna.heyman@proton.me>"]
 keywords = ["music", "lyrics", "synced-lyrics"]
 categories = ["multimedia::audio"]
 
 [workspace.dependencies]
-zankyou-parser.path = "./zankyou-parser"
-zankyou-macros.path = "./zankyou-macros"
+sonas-parser.path = "./sonas-parser"
+sonas-macros.path = "./sonas-macros"

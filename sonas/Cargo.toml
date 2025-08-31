@@ -1,8 +1,8 @@
 [package]
-name = "zankyou"
+name = "sonas"
 description = "A modern terminal music player written in Rust"
 build = "build.rs"
-default-run = "zankyou"
+default-run = "sonas"
 version.workspace = true
 edition.workspace = true
 authors.workspace = true
@@ -15,20 +15,20 @@ categories.workspace = true
 path = "src/lib/mod.rs"
 
 [[bin]]
-name = "zankyou"
-path = "src/zankyou/main.rs"
+name = "sonas"
+path = "src/sonas/main.rs"
 
 [[bin]]
-name = "zankyoud"
-path = "src/zankyoud/main.rs"
+name = "sonasd"
+path = "src/sonasd/main.rs"
 
 [[bin]]
-name = "zankyouctl"
-path = "src/zankyouctl/main.rs"
+name = "sonasctl"
+path = "src/sonasctl/main.rs"
 
 [dependencies]
-zankyou-macros.workspace = true
-zankyou-parser.workspace = true
+sonas-macros.workspace = true
+sonas-parser.workspace = true
 bevy_ecs = "0.16.1"
 clap = { version = "4.5.41", features = [
     "derive",

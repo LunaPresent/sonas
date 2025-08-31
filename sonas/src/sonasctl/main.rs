@@ -1,5 +1,5 @@
+use sonas::server;
 use std::env;
-use zankyou::server;
 
 fn main() {
 	let args = env::args().skip(1).collect::<Vec<_>>().join(" ");
