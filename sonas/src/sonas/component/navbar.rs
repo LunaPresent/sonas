@@ -1,5 +1,3 @@
-use std::iter;
-
 use bevy_ecs::{
 	component::Component,
 	entity::Entity,
@@ -50,13 +48,18 @@ impl NavbarComponent {
 		(In(entity), InMut(_buf)): RenderInput,
 		query: Query<&Self>,
 		mut areas: Query<&mut Area>,
+		buttons: Query<&NavbarButtonComponent>,
 	) -> eyre::Result<()> {
 		let comp = query.get(entity)?;
 		let area = **areas.get(entity)?;
 
-		let button_areas = Layout::vertical(Constraint::from_lengths(iter::repeat_n(
-			1,
-			comp.buttons.len(),
+		let button_areas = Layout::horizontal(Constraint::from_lengths(comp.buttons.iter().map(
+			|entity| {
+				buttons
+					.get(*entity)
+					.map(|btn| btn.button_type().text().len() as u16 + 4)
+					.unwrap_or_default()
+			},
 		)))
 		.spacing(1)
 		.split(area);

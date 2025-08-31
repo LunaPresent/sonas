@@ -6,7 +6,8 @@ use color_eyre::eyre;
 use crossterm::event::MouseButton;
 use ratatui::{
 	layout::{Constraint, Layout},
-	widgets::Widget,
+	style::{Color, Style},
+	widgets::{Block, Widget},
 };
 
 use crate::{
@@ -56,14 +57,18 @@ impl ControlPanelComponent {
 		let (comp, area) = query.get(entity)?;
 		let area = **area;
 
-		let [area] = Layout::vertical([Constraint::Length(1)])
-			.flex(ratatui::layout::Flex::Center)
-			.areas(area);
-		let [area] = Layout::horizontal([Constraint::Length(2)])
-			.flex(ratatui::layout::Flex::Center)
-			.areas(area);
+		Block::new()
+			.style(Style::new().bg(Color::Rgb(65, 69, 89)))
+			.render(area, buf);
 
-		comp.icon().render(area, buf);
+		let [button_area] = Layout::vertical([Constraint::Length(1)])
+			.flex(ratatui::layout::Flex::Center)
+			.areas(area);
+		let [button_area] = Layout::horizontal([Constraint::Length(2)])
+			.flex(ratatui::layout::Flex::Center)
+			.areas(button_area);
+
+		comp.icon().render(button_area, buf);
 
 		Ok(())
 	}

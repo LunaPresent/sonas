@@ -18,6 +18,24 @@ pub enum NavbarButtonType {
 	Playlists,
 }
 
+impl NavbarButtonType {
+	pub fn icon(self) -> &'static str {
+		match self {
+			NavbarButtonType::Albums => "󰀥",
+			NavbarButtonType::Artists => "",
+			NavbarButtonType::Playlists => "󰲸",
+		}
+	}
+
+	pub fn text(self) -> &'static str {
+		match self {
+			NavbarButtonType::Albums => "Albums",
+			NavbarButtonType::Artists => "Artists",
+			NavbarButtonType::Playlists => "Playlists",
+		}
+	}
+}
+
 #[derive(Debug, Component, Clone, Copy)]
 #[require(RenderSystem::new(Self::render))]
 pub struct NavbarButtonComponent {
@@ -29,20 +47,8 @@ impl NavbarButtonComponent {
 		Self { button_type }
 	}
 
-	fn text(self) -> &'static str {
-		match self.button_type {
-			NavbarButtonType::Albums => "Albums",
-			NavbarButtonType::Artists => "Artists",
-			NavbarButtonType::Playlists => "Playlists",
-		}
-	}
-
-	fn icon(self) -> &'static str {
-		match self.button_type {
-			NavbarButtonType::Albums => "󰀥",
-			NavbarButtonType::Artists => "",
-			NavbarButtonType::Playlists => "󰲸",
-		}
+	pub fn button_type(self) -> NavbarButtonType {
+		self.button_type
 	}
 
 	fn bg_colour(hovered: bool) -> Color {
@@ -67,7 +73,7 @@ impl NavbarButtonComponent {
 		let [text_area] = Layout::vertical(Constraint::from_lengths([1]))
 			.flex(Flex::Center)
 			.areas(block.inner(area));
-		format!("{} {}", comp.icon(), comp.text())
+		format!("{} {}", comp.button_type.icon(), comp.button_type.text())
 			.bold()
 			.render(text_area, buf);
 
