@@ -25,11 +25,20 @@ impl ConfigManager {
 	fn init(In(entity): InitInput, query: Query<&Self>, mut cmd: Commands) -> eyre::Result<()> {
 		let comp = query.get(entity)?;
 
+		let config = comp.parse_config()?;
+
+		cmd.insert_resource(config.keys);
+		cmd.insert_resource(config.theme);
+
+		Ok(())
+	}
+
+	fn parse_config(&self) -> eyre::Result<AppConfig> {
 		let mut builder = Config::builder().add_source(File::from_str(
 			include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/.config/config.toml")),
 			FileFormat::Toml,
 		));
-		if let Some(file_path) = &comp.file_path {
+		if let Some(file_path) = &self.file_path {
 			builder = builder.add_source(
 				File::with_name(
 					file_path
@@ -41,10 +50,17 @@ impl ConfigManager {
 			);
 		}
 
-		let config: AppConfig = builder.build()?.try_deserialize()?;
+		Ok(builder.build()?.try_deserialize::<AppConfig>()?)
+	}
+}
 
-		cmd.insert_resource(config.keys);
+#[cfg(test)]
+mod tests {
+	use super::*;
 
-		Ok(())
+	#[test]
+	fn default_config_ok() {
+		let config_manager = ConfigManager::new(None);
+		assert!(config_manager.parse_config().is_ok());
 	}
 }

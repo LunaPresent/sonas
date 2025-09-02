@@ -7,3 +7,5 @@ cursor-right = ["l", "<Right>"]
 # "volume set +5" = "+"
 # "volume set -5" = "-"
 # "play toggle" = "<Space>"
+
+[theme]
