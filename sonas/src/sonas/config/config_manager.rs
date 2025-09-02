@@ -67,7 +67,7 @@ where
 			let mut watcher = notify::recommended_watcher(move |_event| {
 				changed.store(true, Ordering::Relaxed);
 			})?;
-			watcher.watch(&file_path, RecursiveMode::Recursive)?;
+			watcher.watch(file_path, RecursiveMode::Recursive)?;
 			comp.watcher = Some(watcher);
 		}
 
@@ -81,19 +81,15 @@ where
 		mut theme: ResMut<Theme>,
 	) -> eyre::Result<EventFlow> {
 		let comp = query.get(entity)?;
-		match event {
-			Event::Tick(_duration) => {
-				if comp
-					.changed
-					.compare_exchange(true, false, Ordering::Release, Ordering::Relaxed)
-					.is_ok()
-				{
-					let config = comp.parse_config()?;
-					*keys = config.keys;
-					*theme = config.theme;
-				}
-			}
-			_ => (),
+		if let Event::Tick(_) = event
+			&& comp
+				.changed
+				.compare_exchange(true, false, Ordering::Release, Ordering::Relaxed)
+				.is_ok()
+		{
+			let config = comp.parse_config()?;
+			*keys = config.keys;
+			*theme = config.theme;
 		}
 		Ok(EventFlow::Propagate)
 	}
