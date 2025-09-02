@@ -8,4 +8,6 @@ cursor-right = ["l", "<Right>"]
 # "volume set -5" = "-"
 # "play toggle" = "<Space>"
 
-[theme]
+[theme.colours]
+background = "#303446"
+overlay = "#414559"

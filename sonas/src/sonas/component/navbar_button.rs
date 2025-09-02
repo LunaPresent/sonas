@@ -51,8 +51,8 @@ impl NavbarButtonComponent {
 		self.button_type
 	}
 
-	fn bg_colour(hovered: bool) -> Color {
-		if hovered { Color::Black } else { Color::Reset }
+	fn bg_colour(hovered: bool) -> Option<Color> {
+		if hovered { Some(Color::Black) } else { None }
 	}
 
 	fn render(
@@ -65,9 +65,10 @@ impl NavbarButtonComponent {
 
 		let hovered = area.contains(Position::new(cursor.x, cursor.y));
 
-		let block = Block::new()
-			.bg(Self::bg_colour(hovered))
-			.padding(Padding::horizontal(1));
+		let mut block = Block::new().padding(Padding::horizontal(1));
+		if let Some(colour) = Self::bg_colour(hovered) {
+			block = block.bg(colour);
+		}
 		block.render_ref(area, buf);
 
 		let [text_area] = Layout::vertical(Constraint::from_lengths([1]))
