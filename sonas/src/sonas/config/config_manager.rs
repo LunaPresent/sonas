@@ -1,31 +1,47 @@
-use std::{fs, path::PathBuf};
+use std::path::PathBuf;
 
+use ::config::{Config, File};
 use bevy_ecs::{
 	component::Component,
 	system::{Commands, In, Query},
 };
-use color_eyre::eyre;
+use color_eyre::eyre::{self, OptionExt};
+use config::FileFormat;
 
-use super::Config;
+use super::AppConfig;
 use crate::tui::ecs::{InitInput, InitSystem};
 
 #[derive(Debug, Component)]
 #[require(InitSystem::new(Self::init))]
 pub struct ConfigManager {
-	file_path: PathBuf,
+	file_path: Option<PathBuf>,
 }
 
 impl ConfigManager {
-	pub fn new(file_path: impl Into<PathBuf>) -> Self {
-		Self {
-			file_path: file_path.into(),
-		}
+	pub fn new(file_path: Option<PathBuf>) -> Self {
+		Self { file_path }
 	}
 
 	fn init(In(entity): InitInput, query: Query<&Self>, mut cmd: Commands) -> eyre::Result<()> {
 		let comp = query.get(entity)?;
 
-		let config: Config = toml::from_str(&fs::read_to_string(&comp.file_path)?)?;
+		let mut builder = Config::builder().add_source(File::from_str(
+			include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/.config/config.toml")),
+			FileFormat::Toml,
+		));
+		if let Some(file_path) = &comp.file_path {
+			builder = builder.add_source(
+				File::with_name(
+					file_path
+						.as_path()
+						.to_str()
+						.ok_or_eyre("failed to convert config file path to string")?,
+				)
+				.required(false),
+			);
+		}
+
+		let config: AppConfig = builder.build()?.try_deserialize()?;
 
 		cmd.insert_resource(config.keys);
 

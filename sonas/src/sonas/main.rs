@@ -4,11 +4,10 @@ mod component;
 mod config;
 mod tui;
 
-use clap::Parser;
-use cli::Cli;
 use color_eyre::eyre;
 
 use app_event::AppEvent;
+use cli::Cli;
 use component::RootComponent;
 use config::ConfigManager;
 use tui::app::App;
@@ -16,9 +15,9 @@ use tui::app::App;
 #[tokio::main]
 async fn main() -> eyre::Result<()> {
 	color_eyre::install()?;
-	let _ = Cli::parse();
+	let cli = Cli::new();
 	let app = App::<AppEvent>::new()
-		.with_component(ConfigManager::new(".config/config.toml"))?
+		.with_component(ConfigManager::new(cli.config_path()))?
 		.with_main_component(RootComponent::default())?;
 	app.run().await
 }
