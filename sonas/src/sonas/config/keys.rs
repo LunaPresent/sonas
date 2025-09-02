@@ -4,5 +4,5 @@ use bevy_ecs::resource::Resource;
 use derive_more::Deref;
 use serde::Deserialize;
 
-#[derive(Debug, Default, Deserialize, Resource, Deref)]
+#[derive(Debug, Deserialize, Resource, Deref)]
 pub struct Keys(KeyConfig<InputAction>);
