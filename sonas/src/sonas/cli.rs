@@ -1,8 +1,29 @@
+use std::path::PathBuf;
+
 use clap::Parser;
+use directories::ProjectDirs;
 
 #[derive(Parser, Debug)]
 #[command(author, version = version(), about)]
-pub struct Cli;
+pub struct Args {}
+
+pub struct Cli {
+	#[allow(dead_code)]
+	pub args: Args,
+	pub proj_dirs: Option<ProjectDirs>,
+}
+
+impl Cli {
+	pub fn new() -> Self {
+		let args = Args::parse();
+		let proj_dirs = ProjectDirs::from("net", "LunaPresent", "sonas");
+		Self { args, proj_dirs }
+	}
+
+	pub fn config_path(&self) -> Option<PathBuf> {
+		Some(self.proj_dirs.as_ref()?.config_dir().join("config"))
+	}
+}
 
 const VERSION_MESSAGE: &str = concat!(
 	env!("CARGO_PKG_VERSION"),
@@ -13,7 +34,7 @@ const VERSION_MESSAGE: &str = concat!(
 	")"
 );
 
-pub fn version() -> String {
+fn version() -> String {
 	let author = clap::crate_authors!();
 
 	format!(
