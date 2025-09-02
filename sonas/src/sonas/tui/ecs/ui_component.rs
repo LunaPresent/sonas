@@ -63,6 +63,7 @@ impl InitSystem {
 
 // TODO: documentation
 #[derive(Component)]
+#[require(UpdateHandle::<E>(SmallVec::new()))]
 #[component(on_add = Self::register_system)]
 pub struct UpdateSystem<E>
 where
@@ -109,6 +110,7 @@ where
 				.expect("UpdateHandle component should've been added just now")
 				.0
 				.push(system_id);
+			entity.remove::<Self>();
 			Ok::<_, eyre::Error>(())
 		});
 	}

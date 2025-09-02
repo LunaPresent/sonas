@@ -1,7 +1,8 @@
 use bevy_ecs::{
+	change_detection::DetectChanges,
 	component::Component,
 	entity::Entity,
-	system::{Commands, In, InMut, Query, Res},
+	system::{Commands, In, InMut, InRef, Query, Res},
 };
 use color_eyre::eyre;
 use ratatui::{
@@ -12,15 +13,23 @@ use ratatui::{
 
 use super::{ControlPanelComponent, LibraryComponent, NavbarComponent, ScrollableComponent};
 use crate::{
+	app_event::AppEvent,
 	config::{Keys, Theme},
 	tui::{
 		config::KeyHandler,
-		ecs::{Area, EntityCommandsExt as _, InitInput, InitSystem, RenderInput, RenderSystem},
+		ecs::{
+			Area, EntityCommandsExt as _, EventFlow, InitInput, InitSystem, RenderInput,
+			RenderSystem, UpdateInput, UpdateSystem,
+		},
 	},
 };
 
 #[derive(Debug, Component)]
-#[require(InitSystem::new(Self::init), RenderSystem::new(Self::render))]
+#[require(
+	InitSystem::new(Self::init),
+	UpdateSystem::<AppEvent>::new(Self::update),
+	RenderSystem::new(Self::render)
+)]
 pub struct RootComponent {
 	control_panel: Entity,
 	nav_bar: Entity,
@@ -58,6 +67,19 @@ impl RootComponent {
 		scrollable.add_child(library);
 
 		Ok(())
+	}
+
+	fn update(
+		(In(entity), InRef(_event)): UpdateInput<AppEvent>,
+		key_config: Res<Keys>,
+		mut query: Query<&mut KeyHandler<AppEvent>>,
+	) -> eyre::Result<EventFlow> {
+		let mut comp = query.get_mut(entity)?;
+
+		if key_config.is_changed() && !key_config.is_added() {
+			*comp = KeyHandler::new(key_config.generate_key_map());
+		}
+		Ok(EventFlow::Propagate)
 	}
 
 	fn render(
