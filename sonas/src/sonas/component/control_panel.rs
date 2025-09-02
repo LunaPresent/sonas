@@ -1,17 +1,18 @@
 use bevy_ecs::{
 	component::Component,
-	system::{In, InMut, InRef, Query},
+	system::{In, InMut, InRef, Query, Res},
 };
 use color_eyre::eyre;
 use crossterm::event::MouseButton;
 use ratatui::{
 	layout::{Constraint, Layout},
-	style::{Color, Style},
+	style::Stylize as _,
 	widgets::{Block, Widget},
 };
 
 use crate::{
 	app_event::AppEvent,
+	config::Theme,
 	tui::{
 		ecs::{Area, EventFlow, RenderInput, RenderSystem, UpdateInput, UpdateSystem},
 		event::Event,
@@ -52,14 +53,13 @@ impl ControlPanelComponent {
 
 	fn render(
 		(In(entity), InMut(buf)): RenderInput,
+		theme: Res<Theme>,
 		query: Query<(&Self, &Area)>,
 	) -> eyre::Result<()> {
 		let (comp, area) = query.get(entity)?;
 		let area = **area;
 
-		Block::new()
-			.style(Style::new().bg(Color::Rgb(65, 69, 89)))
-			.render(area, buf);
+		Block::new().bg(theme.colours.overlay).render(area, buf);
 
 		let [button_area] = Layout::vertical([Constraint::Length(1)])
 			.flex(ratatui::layout::Flex::Center)

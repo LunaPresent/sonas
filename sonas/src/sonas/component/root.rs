@@ -4,11 +4,15 @@ use bevy_ecs::{
 	system::{Commands, In, InMut, Query, Res},
 };
 use color_eyre::eyre;
-use ratatui::layout::{Constraint, Layout};
+use ratatui::{
+	layout::{Constraint, Layout, Size},
+	style::Stylize,
+	widgets::{Block, Widget},
+};
 
-use super::{ControlPanelComponent, LibraryComponent, NavbarComponent};
+use super::{ControlPanelComponent, LibraryComponent, NavbarComponent, ScrollableComponent};
 use crate::{
-	config::Keys,
+	config::{Keys, Theme},
 	tui::{
 		config::KeyHandler,
 		ecs::{Area, EntityCommandsExt as _, InitInput, InitSystem, RenderInput, RenderSystem},
@@ -20,7 +24,7 @@ use crate::{
 pub struct RootComponent {
 	control_panel: Entity,
 	nav_bar: Entity,
-	library: Entity,
+	library_scrollable: Entity,
 }
 
 impl Default for RootComponent {
@@ -28,7 +32,7 @@ impl Default for RootComponent {
 		Self {
 			control_panel: Entity::PLACEHOLDER,
 			nav_bar: Entity::PLACEHOLDER,
-			library: Entity::PLACEHOLDER,
+			library_scrollable: Entity::PLACEHOLDER,
 		}
 	}
 }
@@ -41,22 +45,31 @@ impl RootComponent {
 		mut cmd: Commands,
 	) -> eyre::Result<()> {
 		let mut comp = query.get_mut(entity)?;
+		let library = cmd.spawn(LibraryComponent::default()).id();
+
 		let mut ec = cmd.entity(entity);
 		ec.insert_if_new(KeyHandler::new(key_config.generate_key_map()));
 		comp.control_panel = ec.spawn_child(ControlPanelComponent::default()).id();
 		comp.nav_bar = ec.spawn_child(NavbarComponent::default()).id();
-		comp.library = ec.spawn_child(LibraryComponent::default()).id();
+		let mut scrollable = ec.spawn_child(ScrollableComponent::new(library, |rect| {
+			Size::new(rect.width, rect.height * 3)
+		}));
+		comp.library_scrollable = scrollable.id();
+		scrollable.add_child(library);
 
 		Ok(())
 	}
 
 	fn render(
-		(In(entity), InMut(_buf)): RenderInput,
+		(In(entity), InMut(buf)): RenderInput,
+		theme: Res<Theme>,
 		query: Query<&Self>,
 		mut areas: Query<&mut Area>,
 	) -> eyre::Result<()> {
 		let comp = query.get(entity)?;
 		let area = **areas.get(entity)?;
+
+		Block::new().bg(theme.colours.background).render(area, buf);
 
 		let [navbar_area, library_area, control_panel_area] = Layout::vertical([
 			Constraint::Length(1),
@@ -67,7 +80,7 @@ impl RootComponent {
 
 		**areas.get_mut(comp.nav_bar)? = navbar_area;
 		**areas.get_mut(comp.control_panel)? = control_panel_area;
-		**areas.get_mut(comp.library)? = library_area;
+		**areas.get_mut(comp.library_scrollable)? = library_area;
 
 		Ok(())
 	}

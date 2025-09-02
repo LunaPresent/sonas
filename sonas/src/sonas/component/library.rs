@@ -3,30 +3,23 @@ use std::iter;
 use bevy_ecs::{
 	component::Component,
 	entity::Entity,
-	system::{Commands, In, InMut, InRef, Query, ResMut},
+	system::{Commands, In, InMut, Query, Res, ResMut},
 };
 use color_eyre::eyre;
-use ratatui::layout::{Flex, Layout};
+use ratatui::{
+	layout::{Flex, Layout},
+	style::Stylize as _,
+	widgets::{Block, Widget as _},
+};
 
 use super::AlbumCardComponent;
 use crate::{
-	app_event::AppEvent,
-	tui::{
-		ecs::{
-			Area, EntityCommandsExt, EventFlow, Focus, InitInput, InitSystem, RenderInput,
-			RenderSystem, UpdateInput, UpdateSystem, Viewport,
-		},
-		event::Event,
-	},
+	config::Theme,
+	tui::ecs::{Area, EntityCommandsExt, Focus, InitInput, InitSystem, RenderInput, RenderSystem},
 };
 
 #[derive(Debug, Component, Default)]
-#[require(
-	InitSystem::new(Self::init),
-	UpdateSystem::<AppEvent>::new(Self::update),
-	RenderSystem::new(Self::render),
-	Viewport
-)]
+#[require(InitSystem::new(Self::init), RenderSystem::new(Self::render))]
 pub struct LibraryComponent {
 	album_cards: Vec<Entity>,
 }
@@ -51,32 +44,16 @@ impl LibraryComponent {
 		Ok(())
 	}
 
-	fn update(
-		(In(entity), InRef(event)): UpdateInput<AppEvent>,
-		mut query: Query<&mut Viewport>,
-	) -> eyre::Result<EventFlow> {
-		let mut viewport = query.get_mut(entity)?;
-		Ok(match event {
-			Event::App(AppEvent::MoveCursor(direction)) => {
-				viewport.offset.y = viewport.offset.y.saturating_add_signed(direction.y());
-				EventFlow::Consume
-			}
-			_ => EventFlow::Propagate,
-		})
-	}
-
 	fn render(
-		(In(entity), InMut(_buf)): RenderInput,
-		mut query: Query<(&Self, &mut Viewport)>,
+		(In(entity), InMut(buf)): RenderInput,
+		theme: Res<Theme>,
+		query: Query<&Self>,
 		mut areas: Query<&mut Area>,
 	) -> eyre::Result<()> {
-		let (comp, mut viewport) = query.get_mut(entity)?;
+		let comp = query.get(entity)?;
 		let area = **areas.get(entity)?;
 
-		viewport.size.width = area.width;
-		viewport.size.height = 3 * area.height;
-		viewport.clamp_offset(area.as_size())?;
-		let area = viewport.area();
+		Block::new().bg(theme.colours.background).render(area, buf);
 
 		let card_width = 22;
 		let card_height = 14;

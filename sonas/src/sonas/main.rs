@@ -17,7 +17,7 @@ async fn main() -> eyre::Result<()> {
 	color_eyre::install()?;
 	let cli = Cli::new();
 	let app = App::<AppEvent>::new()
-		.with_component(ConfigManager::new(cli.config_path()))?
+		.with_component(ConfigManager::<AppEvent>::new(cli.config_path()))?
 		.with_main_component(RootComponent::default())?;
 	app.run().await
 }
