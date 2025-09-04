@@ -9,5 +9,7 @@ cursor-right = ["l", "<Right>"]
 # "play toggle" = "<Space>"
 
 [theme.colours]
-background = "#303446"
-overlay = "#414559"
+background = "#1e1e2e"
+overlay = "#313244"
+border-active = "#b4befe"
+border-inactive = "#6c7086"
