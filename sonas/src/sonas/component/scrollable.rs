@@ -12,6 +12,7 @@ use crate::{
 		ecs::{Area, EventFlow, RenderInput, RenderSystem, UpdateInput, UpdateSystem, Viewport},
 		event::Event,
 	},
+	util::{IntoOffset as _, ResetOrigin as _},
 };
 
 #[derive(Debug, Component)]
@@ -38,13 +39,39 @@ where
 
 	fn update(
 		(In(entity), InRef(event)): UpdateInput<AppEvent>,
-		mut query: Query<&mut Viewport>,
+		mut query: Query<(&mut Viewport, &Area)>,
 	) -> eyre::Result<EventFlow> {
-		let mut viewport = query.get_mut(entity)?;
+		let (mut viewport, area) = query.get_mut(entity)?;
 		Ok(match event {
-			Event::App(AppEvent::MoveCursor(direction)) => {
-				viewport.offset.x = viewport.offset.x.saturating_add_signed(direction.x());
-				viewport.offset.y = viewport.offset.y.saturating_add_signed(direction.y());
+			Event::App(AppEvent::ScrollBy { direction, amount }) => {
+				Self::scroll(
+					viewport.as_mut(),
+					direction.x() * amount.cast_signed(),
+					direction.y() * amount.cast_signed(),
+				);
+				viewport.clamp_offset(area.as_size())?;
+				EventFlow::Consume
+			}
+			Event::App(AppEvent::ScrollByRelative {
+				direction,
+				fraction,
+			}) => {
+				let size = area.as_size();
+				Self::scroll(
+					viewport.as_mut(),
+					direction.x() * (size.width as f32 * fraction) as i16,
+					direction.y() * (size.height as f32 * fraction) as i16,
+				);
+				viewport.clamp_offset(size)?;
+				EventFlow::Consume
+			}
+			Event::App(AppEvent::ScrollTo(rect)) => {
+				let area = area.reset_origin().offset(viewport.offset.into_offset());
+				viewport.offset.x -= area.left().saturating_sub(rect.left());
+				viewport.offset.x += rect.right().saturating_sub(area.right());
+				viewport.offset.y -= area.top().saturating_sub(rect.top());
+				viewport.offset.y += rect.bottom().saturating_sub(area.bottom());
+				viewport.clamp_offset(area.as_size())?;
 				EventFlow::Consume
 			}
 			_ => EventFlow::Propagate,
@@ -63,5 +90,10 @@ where
 		**areas.get_mut(comp.inner)? = viewport.area();
 
 		Ok(())
+	}
+
+	fn scroll(viewport: &mut Viewport, x: i16, y: i16) {
+		viewport.offset.x = viewport.offset.x.saturating_add_signed(x);
+		viewport.offset.y = viewport.offset.y.saturating_add_signed(y);
 	}
 }

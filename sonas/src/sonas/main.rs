@@ -3,6 +3,7 @@ mod cli;
 mod component;
 mod config;
 mod tui;
+mod util;
 
 use color_eyre::eyre;
 

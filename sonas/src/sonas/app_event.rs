@@ -1,9 +1,14 @@
+use ratatui::layout::Rect;
+
 use crate::tui::event;
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum AppEvent {
 	Quit,
 	MoveCursor(Direction),
+	ScrollBy { direction: Direction, amount: u16 },
+	ScrollByRelative { direction: Direction, fraction: f32 },
+	ScrollTo(Rect),
 }
 
 impl event::AppEvent for AppEvent {

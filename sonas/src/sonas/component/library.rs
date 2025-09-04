@@ -3,7 +3,7 @@ use std::iter;
 use bevy_ecs::{
 	component::Component,
 	entity::Entity,
-	system::{Commands, In, InMut, Query, Res, ResMut},
+	system::{Commands, In, InMut, InRef, Query, Res, ResMut},
 };
 use color_eyre::eyre;
 use ratatui::{
@@ -14,14 +14,42 @@ use ratatui::{
 
 use super::AlbumCardComponent;
 use crate::{
+	app_event::{AppEvent, Direction},
 	config::Theme,
-	tui::ecs::{Area, EntityCommandsExt, Focus, InitInput, InitSystem, RenderInput, RenderSystem},
+	tui::{
+		ecs::{
+			Area, EntityCommandsExt, EventFlow, EventQueue, Focus, InitInput, InitSystem,
+			RenderInput, RenderSystem, UpdateInput, UpdateSystem,
+		},
+		event::{Dispatch, Event},
+	},
 };
 
-#[derive(Debug, Component, Default)]
-#[require(InitSystem::new(Self::init), RenderSystem::new(Self::render))]
+const CARD_WIDTH: u16 = 22;
+const CARD_HEIGHT: u16 = 14;
+const HORIZONTAL_GAP: u16 = 3;
+const VERTICAL_GAP: u16 = 1;
+
+#[derive(Debug, Component)]
+#[require(
+	InitSystem::new(Self::init),
+	UpdateSystem::<AppEvent>::new(Self::update),
+	RenderSystem::new(Self::render)
+)]
 pub struct LibraryComponent {
 	album_cards: Vec<Entity>,
+	cards_per_row: u16,
+	selected_idx: u16,
+}
+
+impl Default for LibraryComponent {
+	fn default() -> Self {
+		Self {
+			album_cards: Vec::default(),
+			cards_per_row: 1,
+			selected_idx: 0,
+		}
+	}
 }
 
 impl LibraryComponent {
@@ -44,29 +72,50 @@ impl LibraryComponent {
 		Ok(())
 	}
 
+	fn update(
+		(In(entity), InRef(event)): UpdateInput<AppEvent>,
+		mut focus: ResMut<Focus>,
+		mut event_queue: ResMut<EventQueue<AppEvent>>,
+		mut query: Query<&mut Self>,
+		areas: Query<&Area>,
+	) -> eyre::Result<EventFlow> {
+		let mut comp = query.get_mut(entity)?;
+		let flow = match event {
+			Event::App(AppEvent::MoveCursor(direction)) => {
+				comp.move_cursor(*direction);
+				if let Some(target) = comp.album_cards.get(comp.selected_idx as usize) {
+					focus.target = *target;
+					let area = areas.get(*target)?;
+					event_queue.push(Dispatch::Target(entity), AppEvent::ScrollTo(**area));
+				}
+				EventFlow::Consume
+			}
+			_ => EventFlow::Propagate,
+		};
+		Ok(flow)
+	}
+
 	fn render(
 		(In(entity), InMut(buf)): RenderInput,
 		theme: Res<Theme>,
-		query: Query<&Self>,
+		mut query: Query<&mut Self>,
 		mut areas: Query<&mut Area>,
 	) -> eyre::Result<()> {
-		let comp = query.get(entity)?;
+		let mut comp = query.get_mut(entity)?;
 		let area = **areas.get(entity)?;
 
 		Block::new().bg(theme.colours.background).render(area, buf);
 
-		let card_width = 22;
-		let card_height = 14;
-		let horizontal_gap = 3;
-		let vertical_gap = 1;
-		let horizontal_fit = (area.width / (card_width + horizontal_gap)) as usize;
-		let vertical_fit = (area.height / (card_height + vertical_gap)) as usize;
+		let horizontal_fit = (area.width / (CARD_WIDTH + HORIZONTAL_GAP)) as usize;
+		let vertical_fit = (area.height / (CARD_HEIGHT + VERTICAL_GAP)) as usize;
 
-		let columns = Layout::horizontal(iter::repeat_n(card_width, horizontal_fit))
-			.spacing(horizontal_gap)
+		comp.cards_per_row = horizontal_fit as u16;
+
+		let columns = Layout::horizontal(iter::repeat_n(CARD_WIDTH, horizontal_fit))
+			.spacing(HORIZONTAL_GAP)
 			.flex(Flex::Center);
 		let rows =
-			Layout::vertical(iter::repeat_n(card_height, vertical_fit)).spacing(vertical_gap);
+			Layout::vertical(iter::repeat_n(CARD_HEIGHT, vertical_fit)).spacing(VERTICAL_GAP);
 
 		for i in 0..50 {
 			**areas.get_mut(comp.album_cards[i])? = Default::default();
@@ -82,5 +131,19 @@ impl LibraryComponent {
 		}
 
 		Ok(())
+	}
+
+	fn move_cursor(&mut self, direction: Direction) {
+		if self.album_cards.is_empty() {
+			return;
+		}
+		let height = (self.album_cards.len() as u16 - 1) / self.cards_per_row + 1;
+		let x = (self.selected_idx % self.cards_per_row)
+			.saturating_add_signed(direction.x())
+			.min(self.cards_per_row - 1);
+		let y = (self.selected_idx / self.cards_per_row)
+			.saturating_add_signed(direction.y())
+			.min(height);
+		self.selected_idx = (x + self.cards_per_row * y).min(self.album_cards.len() as u16);
 	}
 }
