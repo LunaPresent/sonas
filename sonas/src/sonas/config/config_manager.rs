@@ -62,7 +62,12 @@ where
 		cmd.insert_resource(config.keys);
 		cmd.insert_resource(config.theme);
 
-		if let Some(file_path) = comp.file_path.as_ref().and_then(|p| p.parent()) {
+		if let Some(file_path) = comp
+			.file_path
+			.as_ref()
+			.and_then(|p| p.parent())
+			.filter(|p| p.exists())
+		{
 			let changed = comp.changed.clone();
 			let mut watcher = notify::recommended_watcher(move |_event| {
 				changed.store(true, Ordering::Relaxed);
@@ -84,7 +89,7 @@ where
 		if let Event::Tick(_) = event
 			&& comp
 				.changed
-				.compare_exchange(true, false, Ordering::Release, Ordering::Relaxed)
+				.compare_exchange(true, false, Ordering::Relaxed, Ordering::Relaxed)
 				.is_ok()
 		{
 			let config = comp.parse_config()?;
