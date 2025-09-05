@@ -143,7 +143,7 @@ impl LibraryComponent {
 			.min(self.cards_per_row - 1);
 		let y = (self.selected_idx / self.cards_per_row)
 			.saturating_add_signed(direction.y())
-			.min(height);
-		self.selected_idx = (x + self.cards_per_row * y).min(self.album_cards.len() as u16);
+			.min(height - 1);
+		self.selected_idx = (x + self.cards_per_row * y).min(self.album_cards.len() as u16 - 1);
 	}
 }
