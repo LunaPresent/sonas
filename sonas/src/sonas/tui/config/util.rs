@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(untagged)]
-pub(super) enum OneOrMany<T> {
+pub(crate) enum OneOrMany<T> {
 	One(T),
 	Many(Vec<T>),
 }
@@ -30,7 +30,7 @@ impl<'a, T> IntoIterator for &'a OneOrMany<T> {
 }
 
 #[derive(Debug)]
-pub(super) struct OneOrManyIterator<'a, T> {
+pub(crate) struct OneOrManyIterator<'a, T> {
 	container: &'a OneOrMany<T>,
 	idx: usize,
 }

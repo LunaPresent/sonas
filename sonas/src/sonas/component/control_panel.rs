@@ -13,19 +13,22 @@ use ratatui::{
 use crate::{
 	app_event::AppEvent,
 	config::Theme,
-	tui::{
-		ecs::{Area, EventFlow, RenderInput, RenderSystem, UpdateInput, UpdateSystem},
-		event::Event,
-	},
+	tui::{ecs::*, event::Event},
 };
 
 #[derive(Debug, Component, Default, Clone, Copy)]
-#[require(
-	UpdateSystem::<AppEvent>::new(Self::update),
-	RenderSystem::new(Self::render)
-)]
+#[component(on_add = Self::register_systems)]
 pub struct ControlPanelComponent {
 	playing: bool,
+}
+
+impl UiComponent for ControlPanelComponent {
+	fn systems() -> impl IntoIterator<Item = UiSystem> {
+		[
+			UiSystem::update(Self::update),
+			UiSystem::render(Self::render),
+		]
+	}
 }
 
 impl ControlPanelComponent {

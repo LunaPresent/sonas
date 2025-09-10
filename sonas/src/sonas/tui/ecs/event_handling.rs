@@ -23,7 +23,7 @@ use ratatui::layout::Position;
 
 use super::{
 	Area, Dispatch, Event, EventDispatch, Viewport,
-	ui_component::{UpdateHandle, UpdateSystemId},
+	ui_component::{SystemHandle as _, UpdateHandle, UpdateSystemId},
 };
 
 #[derive(Debug)]
@@ -36,7 +36,7 @@ where
 }
 
 #[derive(Debug)]
-pub(super) struct UpdateContext<E>
+pub(crate) struct UpdateContext<E>
 where
 	E: 'static,
 {
@@ -129,11 +129,8 @@ where
 		components: Query<(Entity, &UpdateHandle<E>)>,
 	) {
 		for (entity, handle) in components {
-			for system in handle.iter() {
-				targets.push(EntityUpdateInfo {
-					entity,
-					system: *system,
-				});
+			for &system in handle.systems() {
+				targets.push(EntityUpdateInfo { entity, system });
 			}
 		}
 	}
@@ -174,11 +171,8 @@ where
 				..
 			}) => {
 				for (entity, handle) in broadcast_components {
-					for system in handle.iter() {
-						targets.push(EntityUpdateInfo {
-							entity,
-							system: *system,
-						});
+					for &system in handle.systems() {
+						targets.push(EntityUpdateInfo { entity, system });
 					}
 				}
 				return Ok(());
@@ -214,10 +208,10 @@ where
 		parents: Query<&ChildOf>,
 	) {
 		if let Ok(handle) = handles.get(head) {
-			for system in handle.iter() {
+			for &system in handle.systems() {
 				targets.push(EntityUpdateInfo {
 					entity: head,
-					system: *system,
+					system,
 				});
 			}
 		}
@@ -251,6 +245,9 @@ where
 	/// | .......0 | ....../ | ...........1 | recurse then none |
 	/// | .......1 | ......0 | ...........1 | none............. |
 	/// | .......1 | ......1 | ...........1 | recurse then self |
+	// BUG: making all components have a render handler and thus also an area has
+	// made it so this function now targets "blank" root components
+	// TODO: rework this, probably with a `Clickable` component
 	fn find_cursor_target_inner(
 		mut pos: Position,
 		entity: Entity,

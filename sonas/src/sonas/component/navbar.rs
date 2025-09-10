@@ -6,16 +6,19 @@ use bevy_ecs::{
 use color_eyre::eyre;
 use ratatui::layout::{Constraint, Layout};
 
-use crate::tui::ecs::{
-	Area, EntityCommandsExt as _, InitInput, InitSystem, RenderInput, RenderSystem,
-};
-
 use super::{NavbarButtonComponent, navbar_button::NavbarButtonType};
+use crate::tui::ecs::*;
 
 #[derive(Debug, Component, Default)]
-#[require(InitSystem::new(Self::init), RenderSystem::new(Self::render))]
+#[component(on_add = Self::register_systems)]
 pub struct NavbarComponent {
 	buttons: Vec<Entity>,
+}
+
+impl UiComponent for NavbarComponent {
+	fn systems() -> impl IntoIterator<Item = UiSystem> {
+		[UiSystem::init(Self::init), UiSystem::render(Self::render)]
+	}
 }
 
 impl NavbarComponent {

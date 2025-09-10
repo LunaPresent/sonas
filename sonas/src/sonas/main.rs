@@ -11,7 +11,8 @@ use app_event::AppEvent;
 use cli::Cli;
 use component::RootComponent;
 use config::ConfigManager;
-use tui::app::App;
+
+use crate::tui::app::App;
 
 #[tokio::main]
 async fn main() -> eyre::Result<()> {

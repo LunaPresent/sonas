@@ -8,25 +8,31 @@ use ratatui::layout::{Rect, Size};
 
 use crate::{
 	app_event::AppEvent,
-	tui::{
-		ecs::{Area, EventFlow, RenderInput, RenderSystem, UpdateInput, UpdateSystem, Viewport},
-		event::Event,
-	},
+	tui::{ecs::*, event::Event},
 	util::{IntoOffset as _, ResetOrigin as _},
 };
 
 #[derive(Debug, Component)]
-#[require(
-	UpdateSystem::<AppEvent>::new(Self::update),
-	RenderSystem::new(Self::render),
-	Viewport
-)]
+#[require(Viewport)]
+#[component(on_add = Self::register_systems)]
 pub struct ScrollableComponent<F>
 where
 	F: Fn(Rect) -> Size + Send + Sync + 'static,
 {
 	inner: Entity,
 	size_fn: F,
+}
+
+impl<F> UiComponent for ScrollableComponent<F>
+where
+	F: Fn(Rect) -> Size + Send + Sync + 'static,
+{
+	fn systems() -> impl IntoIterator<Item = UiSystem> {
+		[
+			UiSystem::update(Self::update),
+			UiSystem::render(Self::render),
+		]
+	}
 }
 
 impl<F> ScrollableComponent<F>

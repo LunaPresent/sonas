@@ -17,10 +17,7 @@ use crate::{
 	app_event::{AppEvent, Direction},
 	config::Theme,
 	tui::{
-		ecs::{
-			Area, EntityCommandsExt, EventFlow, EventQueue, Focus, InitInput, InitSystem,
-			RenderInput, RenderSystem, UpdateInput, UpdateSystem,
-		},
+		ecs::*,
 		event::{Dispatch, Event},
 	},
 };
@@ -31,15 +28,21 @@ const HORIZONTAL_GAP: u16 = 3;
 const VERTICAL_GAP: u16 = 1;
 
 #[derive(Debug, Component)]
-#[require(
-	InitSystem::new(Self::init),
-	UpdateSystem::<AppEvent>::new(Self::update),
-	RenderSystem::new(Self::render)
-)]
+#[component(on_add = Self::register_systems)]
 pub struct LibraryComponent {
 	album_cards: Vec<Entity>,
 	cards_per_row: u16,
 	selected_idx: u16,
+}
+
+impl UiComponent for LibraryComponent {
+	fn systems() -> impl IntoIterator<Item = UiSystem> {
+		[
+			UiSystem::init(Self::init),
+			UiSystem::update(Self::update),
+			UiSystem::render(Self::render),
+		]
+	}
 }
 
 impl Default for LibraryComponent {
