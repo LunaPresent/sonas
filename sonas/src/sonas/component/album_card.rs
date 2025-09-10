@@ -8,14 +8,17 @@ use ratatui::{
 	widgets::{Block, BorderType, Borders, WidgetRef as _},
 };
 
-use crate::{
-	config::Theme,
-	tui::ecs::{Area, Focus, RenderInput, RenderSystem},
-};
+use crate::{config::Theme, tui::ecs::*};
 
 #[derive(Debug, Component, Default)]
-#[require(RenderSystem::new(Self::render))]
+#[component(on_add = Self::register_systems)]
 pub struct AlbumCardComponent {}
+
+impl UiComponent for AlbumCardComponent {
+	fn systems() -> impl IntoIterator<Item = UiSystem> {
+		[UiSystem::render(Self::render)]
+	}
+}
 
 impl AlbumCardComponent {
 	fn render(

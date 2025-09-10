@@ -20,13 +20,13 @@ use super::AppConfig;
 use crate::{
 	config::{Keys, Theme},
 	tui::{
-		ecs::{EventFlow, InitInput, InitSystem, UpdateInput, UpdateSystem},
+		ecs::{EventFlow, InitInput, UiComponent, UiSystem, UpdateInput},
 		event::Event,
 	},
 };
 
 #[derive(Debug, Component)]
-#[require(InitSystem::new(Self::init), UpdateSystem::<E>::new(Self::update))]
+#[component(on_add = Self::register_systems)]
 pub struct ConfigManager<E>
 where
 	E: Send + Sync + 'static,
@@ -35,6 +35,15 @@ where
 	watcher: Option<RecommendedWatcher>,
 	changed: Arc<AtomicBool>,
 	phantom_data: PhantomData<E>,
+}
+
+impl<E> UiComponent for ConfigManager<E>
+where
+	E: Send + Sync + 'static,
+{
+	fn systems() -> impl IntoIterator<Item = UiSystem> {
+		[UiSystem::init(Self::init), UiSystem::update(Self::update)]
+	}
 }
 
 impl<E> ConfigManager<E>

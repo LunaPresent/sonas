@@ -7,14 +7,12 @@ mod ui_component;
 pub use entity_commands_ext::EntityCommandsExt;
 pub use event_handling::{AsyncEventQueue, CursorPos, EventFlow, EventQueue, Focus};
 pub use rendering::{Area, Viewport};
-use tokio::sync::mpsc;
-pub use ui_component::{
-	InitInput, InitSystem, RenderInput, RenderSystem, UpdateInput, UpdateSystem,
-};
+pub use ui_component::{InitInput, RenderInput, UiComponent, UiSystem, UpdateInput};
 
 use bevy_ecs::{bundle::Bundle, entity::Entity, world::World};
 use color_eyre::eyre;
 use ratatui::Frame;
+use tokio::sync::mpsc;
 
 use super::event::{Dispatch, Event, EventDispatch};
 use event_handling::UpdateContext;
@@ -22,7 +20,7 @@ use init::init_components;
 use rendering::RenderContext;
 
 #[derive(Debug)]
-pub(super) struct ComponentSystem<E>
+pub(crate) struct ComponentSystem<E>
 where
 	E: 'static,
 {
@@ -85,7 +83,7 @@ where
 	}
 }
 
-pub struct HandleEventResult<E> {
+pub(crate) struct HandleEventResult<E> {
 	pub propagated: Option<Event<E>>,
 	pub requeued: Option<EventDispatch<E>>,
 }

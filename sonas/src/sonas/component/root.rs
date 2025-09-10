@@ -15,25 +15,25 @@ use super::{ControlPanelComponent, LibraryComponent, NavbarComponent, Scrollable
 use crate::{
 	app_event::AppEvent,
 	config::{Keys, Theme},
-	tui::{
-		config::KeyHandler,
-		ecs::{
-			Area, EntityCommandsExt as _, EventFlow, InitInput, InitSystem, RenderInput,
-			RenderSystem, UpdateInput, UpdateSystem,
-		},
-	},
+	tui::{config::KeyHandler, ecs::*},
 };
 
 #[derive(Debug, Component)]
-#[require(
-	InitSystem::new(Self::init),
-	UpdateSystem::<AppEvent>::new(Self::update),
-	RenderSystem::new(Self::render)
-)]
+#[component(on_add = Self::register_systems)]
 pub struct RootComponent {
 	control_panel: Entity,
 	nav_bar: Entity,
 	library_scrollable: Entity,
+}
+
+impl UiComponent for RootComponent {
+	fn systems() -> impl IntoIterator<Item = UiSystem> {
+		[
+			UiSystem::init(Self::init),
+			UiSystem::update(Self::update),
+			UiSystem::render(Self::render),
+		]
+	}
 }
 
 impl Default for RootComponent {

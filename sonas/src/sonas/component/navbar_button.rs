@@ -9,7 +9,7 @@ use ratatui::{
 	widgets::{Block, Padding, Widget as _, WidgetRef as _},
 };
 
-use crate::tui::ecs::{Area, CursorPos, RenderInput, RenderSystem};
+use crate::tui::ecs::*;
 
 #[derive(Debug, Clone, Copy)]
 pub enum NavbarButtonType {
@@ -37,9 +37,15 @@ impl NavbarButtonType {
 }
 
 #[derive(Debug, Component, Clone, Copy)]
-#[require(RenderSystem::new(Self::render))]
+#[component(on_add = Self::register_systems)]
 pub struct NavbarButtonComponent {
 	button_type: NavbarButtonType,
+}
+
+impl UiComponent for NavbarButtonComponent {
+	fn systems() -> impl IntoIterator<Item = UiSystem> {
+		[UiSystem::render(Self::render)]
+	}
 }
 
 impl NavbarButtonComponent {

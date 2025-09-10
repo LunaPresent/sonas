@@ -14,7 +14,7 @@ use ratatui::{
 };
 use thiserror::Error;
 
-use super::ui_component::{RenderHandle, RenderSystemId};
+use super::ui_component::{RenderHandle, RenderSystemId, SystemHandle as _};
 
 // TODO: documentation
 #[derive(Debug, Component, Default, Clone, Copy, Deref, DerefMut)]
@@ -64,7 +64,7 @@ impl Viewport {
 	}
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 struct EntityRenderInfo {
 	entity: Entity,
 	system: Option<RenderSystemId>,
@@ -78,7 +78,7 @@ struct ViewportLease {
 }
 
 #[derive(Debug, Default)]
-pub(super) struct RenderContext {
+pub(crate) struct RenderContext {
 	render_queue: Vec<EntityRenderInfo>,
 	viewport_lease_stack: Vec<ViewportLease>,
 }
@@ -91,21 +91,13 @@ impl RenderContext {
 		world.run_system_once_with(Self::set_area_sizes, area)?;
 		world.run_system_once_with(Self::find_render_targets, &mut self.render_queue)??;
 
-		for (i, target) in self.render_queue.iter().enumerate() {
+		for i in 0..self.render_queue.len() {
+			let target = self.render_queue[i];
 			if let Some(system) = target.system {
 				world.run_system_with(system, (target.entity, buf))??;
 			}
 
-			world.run_system_once_with(
-				Self::handle_viewports,
-				(
-					&mut self.viewport_lease_stack,
-					buf,
-					target.entity,
-					i,
-					target.child_count,
-				),
-			)??;
+			world.run_system_once_with(Self::handle_viewports, (self, i, buf))??;
 		}
 
 		Ok(())
@@ -135,12 +127,23 @@ impl RenderContext {
 	) -> eyre::Result<usize> {
 		let idx = targets.len();
 		let (handle, children) = query.get(head)?;
-		let context = EntityRenderInfo {
-			entity: head,
-			system: handle.map(|handle| **handle),
-			child_count: 0,
-		};
-		targets.push(context);
+		if let Some(handle) = handle {
+			for &system in handle.systems() {
+				let context = EntityRenderInfo {
+					entity: head,
+					system: Some(system),
+					child_count: 0,
+				};
+				targets.push(context);
+			}
+		} else {
+			let context = EntityRenderInfo {
+				entity: head,
+				system: None,
+				child_count: 0,
+			};
+			targets.push(context);
+		}
 
 		let mut child_count = 0;
 		if let Some(children) = children {
@@ -152,36 +155,30 @@ impl RenderContext {
 		Ok(child_count + 1)
 	}
 
-	#[allow(
-		clippy::type_complexity,
-		reason = "separating the tuple into a typedef makes it less clear what is going on"
-	)]
 	fn handle_viewports(
-		(InMut(lease_stack), InMut(buf), In(entity), In(index), In(child_count)): (
-			InMut<Vec<ViewportLease>>,
-			InMut<Buffer>,
-			In<Entity>,
-			In<usize>,
-			In<usize>,
-		),
+		(InMut(context), In(i), InMut(buf)): (InMut<Self>, In<usize>, InMut<Buffer>),
 		mut query: Query<Option<(&mut Viewport, &Area)>>,
 	) -> eyre::Result<()> {
-		if let Some((mut viewport, _)) = query.get_mut(entity)? {
-			std::mem::swap(viewport.resize_and_get_buf_mut(), buf);
+		let entity = context.render_queue[i].entity;
+		let child_count = context.render_queue[i].child_count;
+		if Some(entity) != context.render_queue.get(i + 1).map(|x| x.entity)
+			&& let Some((mut viewport, _)) = query.get_mut(entity)?
+		{
+			core::mem::swap(viewport.resize_and_get_buf_mut(), buf);
 			buf.reset();
-			lease_stack.push(ViewportLease {
+			context.viewport_lease_stack.push(ViewportLease {
 				entity,
-				end: index + child_count,
+				end: i + child_count,
 			});
 		}
 
-		while let Some(lease) = lease_stack.last()
-			&& index == lease.end
+		while let Some(lease) = context.viewport_lease_stack.last()
+			&& i == lease.end
 		{
 			let (mut viewport, area) =
 				query.get_mut(lease.entity)?.ok_or(ViewportError::Missing)?;
-			std::mem::swap(&mut viewport.buf, buf);
-			lease_stack.pop();
+			core::mem::swap(&mut viewport.buf, buf);
+			context.viewport_lease_stack.pop();
 
 			Self::combine_viewports(buf, &viewport, **area)?;
 		}

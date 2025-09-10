@@ -8,12 +8,12 @@ use color_eyre::eyre;
 
 use super::{KeyChord, KeyMap, KeyMapMatch};
 use crate::tui::{
-	ecs::{EventFlow, EventQueue, UpdateInput, UpdateSystem},
+	ecs::{EventFlow, EventQueue, UiComponent, UiSystem, UpdateInput},
 	event::{Dispatch, Event},
 };
 
 #[derive(Debug, Component)]
-#[require(UpdateSystem::<E>::new(Self::update))]
+#[component(on_add = Self::register_systems)]
 pub struct KeyHandler<E>
 where
 	E: Send + Sync + Clone + 'static,
@@ -22,6 +22,15 @@ where
 	key_map_match: KeyMapMatch,
 	timeout: Duration,
 	timeoutlen: Duration,
+}
+
+impl<E> UiComponent for KeyHandler<E>
+where
+	E: Send + Sync + Clone + 'static,
+{
+	fn systems() -> impl IntoIterator<Item = UiSystem> {
+		[UiSystem::update(Self::update)]
+	}
 }
 
 impl<E> KeyHandler<E>
@@ -36,12 +45,7 @@ where
 			timeoutlen: Duration::from_secs(1),
 		}
 	}
-}
 
-impl<E> KeyHandler<E>
-where
-	E: Send + Sync + Clone + 'static,
-{
 	fn update(
 		(In(entity), InRef(event)): UpdateInput<E>,
 		mut event_queue: ResMut<EventQueue<E>>,
