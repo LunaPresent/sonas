@@ -23,7 +23,7 @@ use ratatui::layout::Position;
 
 use super::{
 	Area, Dispatch, Event, EventDispatch, Viewport,
-	ui_component::{SystemHandle as _, UpdateHandle, UpdateSystemId},
+	ui_component::{UpdateHandle, UpdateSystemId},
 };
 
 #[derive(Debug)]
@@ -129,7 +129,7 @@ where
 		components: Query<(Entity, &UpdateHandle<E>)>,
 	) {
 		for (entity, handle) in components {
-			for &system in handle.systems() {
+			for &system in handle.iter() {
 				targets.push(EntityUpdateInfo { entity, system });
 			}
 		}
@@ -171,7 +171,7 @@ where
 				..
 			}) => {
 				for (entity, handle) in broadcast_components {
-					for &system in handle.systems() {
+					for &system in handle.iter() {
 						targets.push(EntityUpdateInfo { entity, system });
 					}
 				}
@@ -208,7 +208,7 @@ where
 		parents: Query<&ChildOf>,
 	) {
 		if let Ok(handle) = handles.get(head) {
-			for &system in handle.systems() {
+			for &system in handle.iter() {
 				targets.push(EntityUpdateInfo {
 					entity: head,
 					system,

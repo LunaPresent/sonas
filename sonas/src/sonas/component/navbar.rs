@@ -11,6 +11,7 @@ use crate::tui::ecs::*;
 
 #[derive(Debug, Component, Default)]
 #[component(on_add = Self::register_systems)]
+#[component(on_remove = Self::register_systems)]
 pub struct NavbarComponent {
 	buttons: Vec<Entity>,
 }

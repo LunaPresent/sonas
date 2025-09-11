@@ -14,6 +14,7 @@ use crate::tui::{
 
 #[derive(Debug, Component)]
 #[component(on_add = Self::register_systems)]
+#[component(on_remove = Self::unregister_systems)]
 pub struct KeyHandler<E>
 where
 	E: Send + Sync + Clone + 'static,

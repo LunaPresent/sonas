@@ -15,6 +15,7 @@ use crate::{
 #[derive(Debug, Component)]
 #[require(Viewport)]
 #[component(on_add = Self::register_systems)]
+#[component(on_remove = Self::unregister_systems)]
 pub struct ScrollableComponent<F>
 where
 	F: Fn(Rect) -> Size + Send + Sync + 'static,
