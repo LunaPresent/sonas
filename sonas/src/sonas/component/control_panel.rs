@@ -18,6 +18,7 @@ use crate::{
 
 #[derive(Debug, Component, Default, Clone, Copy)]
 #[component(on_add = Self::register_systems)]
+#[component(on_remove = Self::unregister_systems)]
 pub struct ControlPanelComponent {
 	playing: bool,
 }

@@ -45,4 +45,15 @@ pub trait UiComponent {
 			}
 		});
 	}
+
+	// TODO: documentation
+	fn unregister_systems(mut world: DeferredWorld, context: HookContext) {
+		let mut cmd = world.commands();
+		let mut entity_cmd = cmd.entity(context.entity);
+		entity_cmd.queue(move |mut entity_world: EntityWorldMut| {
+			for system in Self::systems() {
+				system.unregister(&mut entity_world);
+			}
+		});
+	}
 }

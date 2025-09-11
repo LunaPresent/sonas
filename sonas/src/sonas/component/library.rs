@@ -29,6 +29,7 @@ const VERTICAL_GAP: u16 = 1;
 
 #[derive(Debug, Component)]
 #[component(on_add = Self::register_systems)]
+#[component(on_remove = Self::unregister_systems)]
 pub struct LibraryComponent {
 	album_cards: Vec<Entity>,
 	cards_per_row: u16,

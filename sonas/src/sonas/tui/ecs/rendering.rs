@@ -14,7 +14,7 @@ use ratatui::{
 };
 use thiserror::Error;
 
-use super::ui_component::{RenderHandle, RenderSystemId, SystemHandle as _};
+use super::ui_component::{RenderHandle, RenderSystemId};
 
 // TODO: documentation
 #[derive(Debug, Component, Default, Clone, Copy, Deref, DerefMut)]
@@ -128,7 +128,7 @@ impl RenderContext {
 		let idx = targets.len();
 		let (handle, children) = query.get(head)?;
 		if let Some(handle) = handle {
-			for &system in handle.systems() {
+			for &system in handle.iter() {
 				let context = EntityRenderInfo {
 					entity: head,
 					system: Some(system),

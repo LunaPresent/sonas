@@ -38,6 +38,7 @@ impl NavbarButtonType {
 
 #[derive(Debug, Component, Clone, Copy)]
 #[component(on_add = Self::register_systems)]
+#[component(on_remove = Self::unregister_systems)]
 pub struct NavbarButtonComponent {
 	button_type: NavbarButtonType,
 }

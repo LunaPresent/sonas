@@ -12,6 +12,7 @@ use crate::{config::Theme, tui::ecs::*};
 
 #[derive(Debug, Component, Default)]
 #[component(on_add = Self::register_systems)]
+#[component(on_remove = Self::unregister_systems)]
 pub struct AlbumCardComponent {}
 
 impl UiComponent for AlbumCardComponent {

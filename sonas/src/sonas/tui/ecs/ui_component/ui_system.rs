@@ -49,6 +49,10 @@ impl UiSystem {
 		self.boxed_system.register(entity_world);
 	}
 
+	pub(crate) fn unregister(&self, entity_world: &mut EntityWorldMut) {
+		self.boxed_system.unregister(entity_world);
+	}
+
 	fn new<H, M, S>(system: S) -> Self
 	where
 		H: SystemHandle + Component<Mutability = Mutable> + Default,
@@ -66,6 +70,7 @@ impl UiSystem {
 
 trait GenericSystem {
 	fn register(&self, entity_world: &mut EntityWorldMut);
+	fn unregister(&self, entity_world: &mut EntityWorldMut);
 }
 
 struct GenericSystemImpl<H, M, S> {
@@ -89,5 +94,20 @@ where
 			.get_mut::<H>()
 			.expect("Handle should have just been inserted");
 		handle.push(system_id);
+	}
+
+	fn unregister(&self, entity_world: &mut EntityWorldMut) {
+		let system_id = unsafe {
+			let world = entity_world.world_mut();
+			world.register_system_cached(self.system.clone())
+		};
+		if let Some(mut handle) = entity_world.get_mut::<H>()
+			&& let Some(i) = handle
+				.iter()
+				.enumerate()
+				.find_map(|(i, &s)| (s == system_id).then_some(i))
+		{
+			handle.swap_remove(i);
+		}
 	}
 }
