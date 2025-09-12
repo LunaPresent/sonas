@@ -27,13 +27,13 @@ impl UiSystem {
 	}
 
 	// TODO: documentation
-	pub fn update<E, M, S>(system: S) -> Self
+	pub fn update<T, M, S>(system: S) -> Self
 	where
-		E: 'static,
+		T: 'static,
 		M: Sync + Send + 'static,
-		S: IntoSystem<UpdateInput<'static, E>, UpdateOutput, M> + Sync + Send + Clone + 'static,
+		S: IntoSystem<UpdateInput<'static, T>, UpdateOutput, M> + Sync + Send + Clone + 'static,
 	{
-		Self::new::<UpdateHandle<E>, M, S>(system)
+		Self::new::<UpdateHandle<T>, M, S>(system)
 	}
 
 	// TODO: documentation

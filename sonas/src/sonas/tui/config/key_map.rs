@@ -10,16 +10,16 @@ type MapIdx = u16;
 ///
 /// [ae]: crate::tui::event::AppEvent
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct KeyMapping<E> {
+pub struct KeyMapping<T> {
 	/// The complete key sequence
 	pub key_sequence: KeySequence,
 	/// The event that should be triggered
-	pub app_event: E,
+	pub app_event: T,
 }
 
-impl<E> KeyMapping<E> {
+impl<T> KeyMapping<T> {
 	/// Creates a new `KeyMapping`
-	pub fn new(key_sequence: KeySequence, app_event: E) -> Self {
+	pub fn new(key_sequence: KeySequence, app_event: T) -> Self {
 		Self {
 			key_sequence,
 			app_event,
@@ -69,15 +69,15 @@ impl<E> KeyMapping<E> {
 ///
 /// [ae]: crate::tui::event::AppEvent
 #[derive(Debug, Clone, PartialEq, Eq, Deref)]
-pub struct KeyMap<E>(Vec<KeyMapping<E>>);
+pub struct KeyMap<T>(Vec<KeyMapping<T>>);
 
-impl<E> From<Vec<KeyMapping<E>>> for KeyMap<E> {
-	fn from(value: Vec<KeyMapping<E>>) -> Self {
+impl<T> From<Vec<KeyMapping<T>>> for KeyMap<T> {
+	fn from(value: Vec<KeyMapping<T>>) -> Self {
 		Self(value).sorted()
 	}
 }
 
-impl<E> KeyMap<E> {
+impl<T> KeyMap<T> {
 	/// Filters the key map by a next key chord in a sequence
 	///
 	/// The first key in a sequence can be matched by passing in a blank [`KeyMapMatch::new`]
@@ -192,7 +192,7 @@ impl KeyMapMatch {
 	///
 	/// A match is any key mapping for which the first n key chords of the key
 	/// sequence are equal to all n key chords recorded in this `KeyMapMatch`, in order
-	pub fn matches<E>(self, key_map: &KeyMap<E>) -> &[KeyMapping<E>] {
+	pub fn matches<T>(self, key_map: &KeyMap<T>) -> &[KeyMapping<T>] {
 		let from = self.match_start as usize;
 		let to = (self.match_end as usize).min(key_map.len());
 		&key_map.0[from..to]
@@ -203,7 +203,7 @@ impl KeyMapMatch {
 	/// This is a subset of the set returned by [`KeyMapMatch::matches`],
 	/// To be precise: any match where the key sequence has the same length as
 	/// the amount of key chords recorded in this `KeyMapMatch` is a full match
-	pub fn full_matches<E>(self, key_map: &KeyMap<E>) -> &[KeyMapping<E>] {
+	pub fn full_matches<T>(self, key_map: &KeyMap<T>) -> &[KeyMapping<T>] {
 		let from = self.match_start as usize;
 		let to = self.full_match_end as usize;
 		&key_map.0[from..to]
@@ -213,7 +213,7 @@ impl KeyMapMatch {
 	///
 	/// This is a subset of the set returned by [`KeyMapMatch::matches`],
 	/// Any match that isn't a full match is a partial match
-	pub fn partial_matches<E>(self, key_map: &KeyMap<E>) -> &[KeyMapping<E>] {
+	pub fn partial_matches<T>(self, key_map: &KeyMap<T>) -> &[KeyMapping<T>] {
 		let from = self.full_match_end as usize;
 		let to = (self.match_end as usize).min(key_map.len());
 		&key_map.0[from..to]

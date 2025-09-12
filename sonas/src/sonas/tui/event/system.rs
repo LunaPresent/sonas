@@ -13,16 +13,16 @@ const TPS: f64 = 8.0;
 const FPS: f64 = 30.0;
 
 #[derive(Debug)]
-pub struct EventSystem<E> {
-	receiver: mpsc::UnboundedReceiver<EventDispatch<E>>,
-	sender: mpsc::UnboundedSender<EventDispatch<E>>,
+pub struct EventSystem<T> {
+	receiver: mpsc::UnboundedReceiver<EventDispatch<T>>,
+	sender: mpsc::UnboundedSender<EventDispatch<T>>,
 	cancellation_token: CancellationToken,
-	join_handle: Option<JoinHandle<Result<(), SendError<EventDispatch<E>>>>>,
+	join_handle: Option<JoinHandle<Result<(), SendError<EventDispatch<T>>>>>,
 }
 
-impl<E> EventSystem<E>
+impl<T> EventSystem<T>
 where
-	E: Send + 'static,
+	T: Send + 'static,
 {
 	/// Creates a new `EventSystem`
 	pub fn new() -> Self {
@@ -44,15 +44,15 @@ where
 	/// This function returns an error if the sender channel is disconnected. This can happen if an
 	/// error occurs in the event thread. In practice, this should not happen unless there is a
 	/// problem with the underlying terminal.
-	pub async fn next(&mut self) -> Result<EventDispatch<E>, EventError<E>> {
+	pub async fn next(&mut self) -> Result<EventDispatch<T>, EventError<T>> {
 		self.receiver.recv().await.ok_or(EventError::Disconnected)
 	}
 
-	pub fn sender(&self) -> mpsc::UnboundedSender<EventDispatch<E>> {
+	pub fn sender(&self) -> mpsc::UnboundedSender<EventDispatch<T>> {
 		self.sender.clone()
 	}
 
-	pub fn start(&mut self) -> Result<(), EventError<E>> {
+	pub fn start(&mut self) -> Result<(), EventError<T>> {
 		if self.join_handle.is_some() {
 			return Err(EventError::AlreadyRunning);
 		}
@@ -64,7 +64,7 @@ where
 		Ok(())
 	}
 
-	pub async fn stop(&mut self) -> Result<(), EventError<E>> {
+	pub async fn stop(&mut self) -> Result<(), EventError<T>> {
 		let join_handle = self.join_handle.take().ok_or(EventError::AlreadyStopped)?;
 		self.cancellation_token.cancel();
 		join_handle.await??;
@@ -73,9 +73,9 @@ where
 	}
 
 	async fn run(
-		sender: mpsc::UnboundedSender<EventDispatch<E>>,
+		sender: mpsc::UnboundedSender<EventDispatch<T>>,
 		cancellation_token: CancellationToken,
-	) -> Result<(), SendError<EventDispatch<E>>> {
+	) -> Result<(), SendError<EventDispatch<T>>> {
 		let tick_rate = Duration::from_secs_f64(1.0 / TPS);
 		let frame_rate = Duration::from_secs_f64(1.0 / FPS);
 		let mut crossterm_events = crossterm::event::EventStream::new();
@@ -107,9 +107,9 @@ where
 	}
 
 	fn handle_crossterm_event(
-		sender: &mpsc::UnboundedSender<EventDispatch<E>>,
+		sender: &mpsc::UnboundedSender<EventDispatch<T>>,
 		evt: CrosstermEvent,
-	) -> Result<(), SendError<EventDispatch<E>>> {
+	) -> Result<(), SendError<EventDispatch<T>>> {
 		match evt {
 			CrosstermEvent::FocusGained => {
 				sender.send(EventDispatch::new(Dispatch::Broadcast, Event::FocusGained))

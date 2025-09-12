@@ -41,19 +41,19 @@ use super::{
 /// app.run().await?;
 /// ```
 #[derive(Debug)]
-pub struct App<E>
+pub struct App<T>
 where
-	E: 'static,
+	T: 'static,
 {
 	should_quit: bool,
 	should_suspend: bool,
-	event_system: EventSystem<E>,
-	ecs: ComponentSystem<E>,
+	event_system: EventSystem<T>,
+	ecs: ComponentSystem<T>,
 }
 
-impl<E> App<E>
+impl<T> App<T>
 where
-	E: AppEvent + Send + Sync + 'static,
+	T: AppEvent + Send + Sync + 'static,
 {
 	/// Creates a new `App`
 	pub fn new() -> Self {
@@ -112,7 +112,7 @@ where
 		Ok(())
 	}
 
-	fn handle_propagated_event(&mut self, tui: &mut Terminal, event: Event<E>) -> eyre::Result<()> {
+	fn handle_propagated_event(&mut self, tui: &mut Terminal, event: Event<T>) -> eyre::Result<()> {
 		match event {
 			Event::Render(_) => {
 				tui.try_draw(|frame| self.ecs.draw(frame).map_err(io::Error::other))?;

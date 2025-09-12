@@ -28,28 +28,28 @@ use crate::{
 #[derive(Debug, Component)]
 #[component(on_add = Self::register_systems)]
 #[component(on_remove = Self::unregister_systems)]
-pub struct ConfigManager<E>
+pub struct ConfigManager<T>
 where
-	E: Send + Sync + 'static,
+	T: Send + Sync + 'static,
 {
 	file_path: Option<PathBuf>,
 	watcher: Option<RecommendedWatcher>,
 	changed: Arc<AtomicBool>,
-	phantom_data: PhantomData<E>,
+	phantom_data: PhantomData<T>,
 }
 
-impl<E> UiComponent for ConfigManager<E>
+impl<T> UiComponent for ConfigManager<T>
 where
-	E: Send + Sync + 'static,
+	T: Send + Sync + 'static,
 {
 	fn systems() -> impl IntoIterator<Item = UiSystem> {
 		[UiSystem::init(Self::init), UiSystem::update(Self::update)]
 	}
 }
 
-impl<E> ConfigManager<E>
+impl<T> ConfigManager<T>
 where
-	E: Send + Sync + 'static,
+	T: Send + Sync + 'static,
 {
 	pub fn new(file_path: Option<PathBuf>) -> Self {
 		Self {
@@ -90,7 +90,7 @@ where
 	}
 
 	fn update(
-		(In(entity), InRef(event)): UpdateInput<E>,
+		(In(entity), InRef(event)): UpdateInput<T>,
 		query: Query<&Self>,
 		mut keys: ResMut<Keys>,
 		mut theme: ResMut<Theme>,

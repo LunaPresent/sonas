@@ -15,30 +15,30 @@ use crate::tui::{
 #[derive(Debug, Component)]
 #[component(on_add = Self::register_systems)]
 #[component(on_remove = Self::unregister_systems)]
-pub struct KeyHandler<E>
+pub struct KeyHandler<T>
 where
-	E: Send + Sync + Clone + 'static,
+	T: Send + Sync + Clone + 'static,
 {
-	key_map: KeyMap<E>,
+	key_map: KeyMap<T>,
 	key_map_match: KeyMapMatch,
 	timeout: Duration,
 	timeoutlen: Duration,
 }
 
-impl<E> UiComponent for KeyHandler<E>
+impl<T> UiComponent for KeyHandler<T>
 where
-	E: Send + Sync + Clone + 'static,
+	T: Send + Sync + Clone + 'static,
 {
 	fn systems() -> impl IntoIterator<Item = UiSystem> {
 		[UiSystem::update(Self::update)]
 	}
 }
 
-impl<E> KeyHandler<E>
+impl<T> KeyHandler<T>
 where
-	E: Send + Sync + Clone + 'static,
+	T: Send + Sync + Clone + 'static,
 {
-	pub fn new(key_map: KeyMap<E>) -> Self {
+	pub fn new(key_map: KeyMap<T>) -> Self {
 		Self {
 			key_map,
 			key_map_match: KeyMapMatch::new(),
@@ -48,8 +48,8 @@ where
 	}
 
 	fn update(
-		(In(entity), InRef(event)): UpdateInput<E>,
-		mut event_queue: ResMut<EventQueue<E>>,
+		(In(entity), InRef(event)): UpdateInput<T>,
+		mut event_queue: ResMut<EventQueue<T>>,
 		mut query: Query<&mut Self>,
 	) -> eyre::Result<EventFlow> {
 		let mut comp = query.get_mut(entity)?;

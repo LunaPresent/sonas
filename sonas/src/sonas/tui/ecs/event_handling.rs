@@ -27,23 +27,23 @@ use super::{
 };
 
 #[derive(Debug)]
-struct EntityUpdateInfo<E>
+struct EntityUpdateInfo<T>
 where
-	E: 'static,
+	T: 'static,
 {
 	entity: Entity,
-	system: UpdateSystemId<E>,
+	system: UpdateSystemId<T>,
 }
 
 #[derive(Debug)]
-pub(crate) struct UpdateContext<E>
+pub(crate) struct UpdateContext<T>
 where
-	E: 'static,
+	T: 'static,
 {
-	update_queue: Vec<EntityUpdateInfo<E>>,
+	update_queue: Vec<EntityUpdateInfo<T>>,
 }
 
-impl<E> Default for UpdateContext<E> {
+impl<T> Default for UpdateContext<T> {
 	fn default() -> Self {
 		Self {
 			update_queue: Default::default(),
@@ -51,15 +51,15 @@ impl<E> Default for UpdateContext<E> {
 	}
 }
 
-impl<E> UpdateContext<E>
+impl<T> UpdateContext<T>
 where
-	E: 'static,
+	T: 'static,
 {
 	pub fn handle_event(
 		&mut self,
-		ed: EventDispatch<E>,
+		ed: EventDispatch<T>,
 		world: &mut World,
-	) -> eyre::Result<Option<Event<E>>> {
+	) -> eyre::Result<Option<Event<T>>> {
 		self.update_queue.clear();
 
 		match ed.dispatch {
@@ -92,9 +92,9 @@ where
 
 	fn target_dispatch(
 		&self,
-		event: Event<E>,
+		event: Event<T>,
 		world: &mut World,
-	) -> eyre::Result<Option<Event<E>>> {
+	) -> eyre::Result<Option<Event<T>>> {
 		let mut consume = false;
 		let mut prev_entity = Entity::PLACEHOLDER;
 
@@ -116,17 +116,17 @@ where
 	}
 
 	fn find_input_entities(
-		InMut(targets): InMut<Vec<EntityUpdateInfo<E>>>,
+		InMut(targets): InMut<Vec<EntityUpdateInfo<T>>>,
 		focus: Res<Focus>,
-		handles: Query<&UpdateHandle<E>>,
+		handles: Query<&UpdateHandle<T>>,
 		parents: Query<&ChildOf>,
 	) {
 		Self::bubble_entities(focus.target, targets, handles, parents);
 	}
 
 	fn find_broadcast_entities(
-		InMut(targets): InMut<Vec<EntityUpdateInfo<E>>>,
-		components: Query<(Entity, &UpdateHandle<E>)>,
+		InMut(targets): InMut<Vec<EntityUpdateInfo<T>>>,
+		components: Query<(Entity, &UpdateHandle<T>)>,
 	) {
 		for (entity, handle) in components {
 			for &system in handle.iter() {
@@ -145,17 +145,17 @@ where
 	)]
 	fn find_cursor_entities(
 		(InMut(targets), InRef(event), In(x), In(y)): (
-			InMut<Vec<EntityUpdateInfo<E>>>,
-			InRef<Event<E>>,
+			InMut<Vec<EntityUpdateInfo<T>>>,
+			InRef<Event<T>>,
 			In<u16>,
 			In<u16>,
 		),
 		mut clicked: Local<Option<Entity>>,
 		mut cursor_pos: ResMut<CursorPos>,
-		broadcast_components: Query<(Entity, &UpdateHandle<E>)>,
+		broadcast_components: Query<(Entity, &UpdateHandle<T>)>,
 		root_entities: Query<Entity, Without<ChildOf>>,
 		areas: Query<(Option<&Area>, Option<&Children>, Option<&Viewport>)>,
-		handles: Query<&UpdateHandle<E>>,
+		handles: Query<&UpdateHandle<T>>,
 		parents: Query<&ChildOf>,
 	) -> eyre::Result<()> {
 		cursor_pos.x = x;
@@ -194,8 +194,8 @@ where
 	}
 
 	fn find_target_entities(
-		(InMut(targets), In(target)): (InMut<Vec<EntityUpdateInfo<E>>>, In<Entity>),
-		handles: Query<&UpdateHandle<E>>,
+		(InMut(targets), In(target)): (InMut<Vec<EntityUpdateInfo<T>>>, In<Entity>),
+		handles: Query<&UpdateHandle<T>>,
 		parents: Query<&ChildOf>,
 	) {
 		Self::bubble_entities(target, targets, handles, parents);
@@ -203,8 +203,8 @@ where
 
 	fn bubble_entities(
 		head: Entity,
-		targets: &mut Vec<EntityUpdateInfo<E>>,
-		handles: Query<&UpdateHandle<E>>,
+		targets: &mut Vec<EntityUpdateInfo<T>>,
+		handles: Query<&UpdateHandle<T>>,
 		parents: Query<&ChildOf>,
 	) {
 		if let Ok(handle) = handles.get(head) {
