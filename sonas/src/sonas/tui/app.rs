@@ -10,7 +10,36 @@ use super::{
 	terminal::Terminal,
 };
 
-// TODO: documentation
+/// Simple interface to setup and run your application
+///
+/// The `App` features a simple builder-style API with two actions:
+/// - Add top-level components using [App::with_component] and [App::with_main_component]
+/// - Run the app until completion with [App::run]
+///
+/// # Examples
+/// ```
+/// #[derive(Debug, PartialEq, Eq)]
+/// enum MyAppEvent {
+///     Quit,
+///     CursorUp,
+///     CursorDown,
+/// }
+/// impl AppEvent for MyAppEvent {
+///     fn is_quit(&self) -> bool {
+///         self == &Self::Quit
+///     }
+/// }
+///
+/// # #[derive(Default, bevy_ecs::component::Component)]
+/// # struct ConfigManager;
+/// # #[derive(Default, bevy_ecs::component::Component)]
+/// # struct RootComponent;
+///
+/// let app = App::<MyAppEvent>::new()
+///     .with_component(ConfigManager::default())?
+///     .with_main_component(RootComponent::default())?;
+/// app.run().await?;
+/// ```
 #[derive(Debug)]
 pub struct App<E>
 where
@@ -26,7 +55,7 @@ impl<E> App<E>
 where
 	E: AppEvent + Send + Sync + 'static,
 {
-	// TODO: documentation
+	/// Creates a new `App`
 	pub fn new() -> Self {
 		let event_system = EventSystem::new();
 		let ecs = ComponentSystem::new(event_system.sender());
@@ -53,7 +82,7 @@ where
 		Ok(self)
 	}
 
-	// TODO: documentation
+	/// Runs the `App` until completion
 	pub async fn run(mut self) -> eyre::Result<()> {
 		let mut tui = Terminal::new()?;
 		tui.enter()?;
