@@ -18,7 +18,7 @@ use super::{Event, EventFlow};
 // TODO: documentation
 pub type InitInput = In<Entity>;
 // TODO: documentation
-pub type UpdateInput<'a, E> = (In<Entity>, InRef<'a, Event<E>>);
+pub type UpdateInput<'a, T> = (In<Entity>, InRef<'a, Event<T>>);
 // TODO: documentation
 pub type RenderInput<'a> = (In<Entity>, InMut<'a, Buffer>);
 
@@ -27,7 +27,7 @@ type UpdateOutput = eyre::Result<EventFlow>;
 type RenderOutput = eyre::Result<()>;
 
 pub(crate) type InitSystemId = SystemId<InitInput, InitOutput>;
-pub(crate) type UpdateSystemId<E> = SystemId<UpdateInput<'static, E>, UpdateOutput>;
+pub(crate) type UpdateSystemId<T> = SystemId<UpdateInput<'static, T>, UpdateOutput>;
 pub(crate) type RenderSystemId = SystemId<RenderInput<'static>, RenderOutput>;
 
 // TODO: documentation

@@ -6,7 +6,7 @@ use tokio::{sync::mpsc::error::SendError, task::JoinError};
 use crate::tui::event::EventDispatch;
 
 #[derive(Error)]
-pub enum EventError<E> {
+pub enum EventError<T> {
 	#[error("event channel disconnected")]
 	Disconnected,
 	#[error("task is already running")]
@@ -16,10 +16,10 @@ pub enum EventError<E> {
 	#[error("failed to join thread")]
 	JoinError(#[from] JoinError),
 	#[error("failed to send event")]
-	SendError(#[from] SendError<EventDispatch<E>>),
+	SendError(#[from] SendError<EventDispatch<T>>),
 }
 
-impl<E> fmt::Debug for EventError<E> {
+impl<T> fmt::Debug for EventError<T> {
 	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
 		fmt::Display::fmt(&self, f)
 	}

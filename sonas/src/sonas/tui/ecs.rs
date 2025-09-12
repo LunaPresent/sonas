@@ -20,25 +20,25 @@ use init::init_components;
 use rendering::RenderContext;
 
 #[derive(Debug)]
-pub(crate) struct ComponentSystem<E>
+pub(crate) struct ComponentSystem<T>
 where
-	E: 'static,
+	T: 'static,
 {
 	world: World,
-	update_context: UpdateContext<E>,
+	update_context: UpdateContext<T>,
 	render_context: RenderContext,
 }
 
-impl<E> ComponentSystem<E>
+impl<T> ComponentSystem<T>
 where
-	E: Send + Sync + 'static,
+	T: Send + Sync + 'static,
 {
-	pub fn new(event_sender: mpsc::UnboundedSender<EventDispatch<E>>) -> Self {
+	pub fn new(event_sender: mpsc::UnboundedSender<EventDispatch<T>>) -> Self {
 		let mut world = World::new();
 		world.insert_resource(Focus::default());
 		world.insert_resource(CursorPos::default());
-		world.insert_resource(EventQueue::<E>::default());
-		world.insert_resource(AsyncEventQueue::<E>::new(event_sender));
+		world.insert_resource(EventQueue::<T>::default());
+		world.insert_resource(AsyncEventQueue::<T>::new(event_sender));
 
 		ComponentSystem {
 			world,
@@ -61,13 +61,13 @@ where
 		Ok(())
 	}
 
-	pub fn handle_event(&mut self, ed: EventDispatch<E>) -> eyre::Result<HandleEventResult<E>> {
+	pub fn handle_event(&mut self, ed: EventDispatch<T>) -> eyre::Result<HandleEventResult<T>> {
 		let event = self.update_context.handle_event(ed, &mut self.world)?;
 		self.world.run_system_cached(init_components)?;
 
 		let requeued = self
 			.world
-			.get_resource_mut::<EventQueue<E>>()
+			.get_resource_mut::<EventQueue<T>>()
 			.and_then(|mut queue| queue.pop());
 
 		Ok(HandleEventResult {
@@ -83,7 +83,7 @@ where
 	}
 }
 
-pub(crate) struct HandleEventResult<E> {
-	pub propagated: Option<Event<E>>,
-	pub requeued: Option<EventDispatch<E>>,
+pub(crate) struct HandleEventResult<T> {
+	pub propagated: Option<Event<T>>,
+	pub requeued: Option<EventDispatch<T>>,
 }

@@ -10,13 +10,13 @@ use bevy_ecs::entity::Entity;
 use crossterm::event::{KeyEvent, MouseEvent};
 
 #[derive(Debug, Clone)]
-pub struct EventDispatch<E> {
+pub struct EventDispatch<T> {
 	pub dispatch: Dispatch,
-	pub event: Event<E>,
+	pub event: Event<T>,
 }
 
-impl<E> EventDispatch<E> {
-	pub fn new(dispatch: Dispatch, event: Event<E>) -> Self {
+impl<T> EventDispatch<T> {
+	pub fn new(dispatch: Dispatch, event: Event<T>) -> Self {
 		Self { dispatch, event }
 	}
 }
@@ -36,10 +36,10 @@ pub trait AppEvent {
 
 #[allow(dead_code)]
 #[derive(Debug, Clone)]
-pub enum Event<E> {
+pub enum Event<T> {
 	Tick(Duration),
 	Render(Duration),
-	App(E),
+	App(T),
 	FocusGained,
 	FocusLost,
 	Key(KeyEvent),

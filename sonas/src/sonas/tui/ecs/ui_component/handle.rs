@@ -31,18 +31,18 @@ impl SystemHandle for InitHandle {
 }
 
 #[derive(Debug, Component, Clone, derive_more::Deref, derive_more::DerefMut)]
-pub struct UpdateHandle<E>(SmallVec<[UpdateSystemId<E>; N]>)
+pub struct UpdateHandle<T>(SmallVec<[UpdateSystemId<T>; N]>)
 where
-	E: 'static;
+	T: 'static;
 
-impl<E> Default for UpdateHandle<E> {
+impl<T> Default for UpdateHandle<T> {
 	fn default() -> Self {
 		Self(SmallVec::default())
 	}
 }
 
-impl<E> SystemHandle for UpdateHandle<E> {
-	type SystemInput = UpdateInput<'static, E>;
+impl<T> SystemHandle for UpdateHandle<T> {
+	type SystemInput = UpdateInput<'static, T>;
 	type SystemOutput = UpdateOutput;
 }
 
