@@ -1,34 +1,27 @@
+mod context;
 mod handle;
 mod ui_system;
 
+pub use context::*;
 pub use handle::*;
 pub use ui_system::*;
 
 use bevy_ecs::{
 	component::HookContext,
-	entity::Entity,
-	system::{In, InMut, InRef, SystemId},
+	system::SystemId,
 	world::{DeferredWorld, EntityWorldMut},
 };
 use color_eyre::eyre;
-use ratatui::buffer::Buffer;
 
-use super::{Event, EventFlow};
-
-// TODO: documentation
-pub type InitInput = In<Entity>;
-// TODO: documentation
-pub type UpdateInput<'a, T> = (In<Entity>, InRef<'a, Event<T>>);
-// TODO: documentation
-pub type RenderInput<'a> = (In<Entity>, InMut<'a, Buffer>);
+use super::EventFlow;
 
 type InitOutput = eyre::Result<()>;
 type UpdateOutput = eyre::Result<EventFlow>;
 type RenderOutput = eyre::Result<()>;
 
-pub(crate) type InitSystemId = SystemId<InitInput, InitOutput>;
-pub(crate) type UpdateSystemId<T> = SystemId<UpdateInput<'static, T>, UpdateOutput>;
-pub(crate) type RenderSystemId = SystemId<RenderInput<'static>, RenderOutput>;
+pub(crate) type InitSystemId = SystemId<InitContext, InitOutput>;
+pub(crate) type UpdateSystemId<T> = SystemId<UpdateContext<'static, T>, UpdateOutput>;
+pub(crate) type RenderSystemId = SystemId<RenderContext<'static>, RenderOutput>;
 
 // TODO: documentation
 pub trait UiComponent {

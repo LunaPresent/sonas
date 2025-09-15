@@ -1,6 +1,6 @@
 use bevy_ecs::{
 	component::Component,
-	system::{In, InMut, Query, Res},
+	system::{Query, Res},
 };
 use color_eyre::eyre;
 use ratatui::{
@@ -23,14 +23,14 @@ impl UiComponent for AlbumCardComponent {
 
 impl AlbumCardComponent {
 	fn render(
-		(In(entity), InMut(buf)): RenderInput,
+		context: RenderContext,
 		theme: Res<Theme>,
 		focus: Res<Focus>,
 		query: Query<(&Self, &Area)>,
 	) -> eyre::Result<()> {
-		let (_comp, area) = query.get(entity)?;
+		let (_comp, area) = query.get(context.entity)?;
 		let area = **area;
-		let has_focus = focus.target == entity;
+		let has_focus = focus.target == context.entity;
 		let border_colour = if has_focus {
 			theme.colours.border_active
 		} else {
@@ -40,7 +40,7 @@ impl AlbumCardComponent {
 		let block = Block::bordered()
 			.border_type(BorderType::Rounded)
 			.border_style(border_colour);
-		block.render_ref(area, buf);
+		block.render_ref(area, context.buffer);
 		let area = block.inner(area);
 
 		let [_image_area, info_area] = Layout::vertical([
@@ -52,7 +52,7 @@ impl AlbumCardComponent {
 		let block = Block::new()
 			.borders(Borders::TOP)
 			.border_style(border_colour);
-		block.render_ref(info_area, buf);
+		block.render_ref(info_area, context.buffer);
 
 		Ok(())
 	}

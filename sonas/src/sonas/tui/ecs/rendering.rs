@@ -14,7 +14,7 @@ use ratatui::{
 };
 use thiserror::Error;
 
-use super::ui_component::{RenderHandle, RenderSystemId};
+use super::ui_component::{RenderContext, RenderHandle, RenderSystemId};
 
 // TODO: documentation
 #[derive(Debug, Component, Default, Clone, Copy, Deref, DerefMut)]
@@ -78,12 +78,12 @@ struct ViewportLease {
 }
 
 #[derive(Debug, Default)]
-pub(crate) struct RenderContext {
+pub(crate) struct RenderSystemRunner {
 	render_queue: Vec<EntityRenderInfo>,
 	viewport_lease_stack: Vec<ViewportLease>,
 }
 
-impl RenderContext {
+impl RenderSystemRunner {
 	pub fn render(&mut self, buf: &mut Buffer, area: Rect, world: &mut World) -> eyre::Result<()> {
 		self.render_queue.clear();
 		self.viewport_lease_stack.clear();
@@ -94,7 +94,13 @@ impl RenderContext {
 		for i in 0..self.render_queue.len() {
 			let target = self.render_queue[i];
 			if let Some(system) = target.system {
-				world.run_system_with(system, (target.entity, buf))??;
+				world.run_system_with(
+					system,
+					RenderContext {
+						entity: target.entity,
+						buffer: buf,
+					},
+				)??;
 			}
 
 			world.run_system_once_with(Self::handle_viewports, (self, i, buf))??;

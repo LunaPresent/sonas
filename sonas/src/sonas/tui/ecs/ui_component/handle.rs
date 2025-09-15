@@ -7,14 +7,14 @@ use bevy_ecs::{
 use smallvec::SmallVec;
 
 use super::{
-	InitInput, InitOutput, InitSystemId, RenderInput, RenderOutput, RenderSystemId, UpdateInput,
-	UpdateOutput, UpdateSystemId,
+	InitContext, InitOutput, InitSystemId, RenderContext, RenderOutput, RenderSystemId,
+	UpdateContext, UpdateOutput, UpdateSystemId,
 };
 use crate::tui::ecs::Area;
 
 const N: usize = 3;
 
-pub(crate) trait SystemHandle:
+pub(crate) trait UiSystemHandle:
 	ops::Deref<Target = SmallVec<[SystemId<Self::SystemInput, Self::SystemOutput>; N]>>
 	+ ops::DerefMut<Target = SmallVec<[SystemId<Self::SystemInput, Self::SystemOutput>; N]>>
 {
@@ -25,8 +25,8 @@ pub(crate) trait SystemHandle:
 #[derive(Debug, Component, Default, Clone, derive_more::Deref, derive_more::DerefMut)]
 pub struct InitHandle(SmallVec<[InitSystemId; N]>);
 
-impl SystemHandle for InitHandle {
-	type SystemInput = InitInput;
+impl UiSystemHandle for InitHandle {
+	type SystemInput = InitContext;
 	type SystemOutput = InitOutput;
 }
 
@@ -41,8 +41,8 @@ impl<T> Default for UpdateHandle<T> {
 	}
 }
 
-impl<T> SystemHandle for UpdateHandle<T> {
-	type SystemInput = UpdateInput<'static, T>;
+impl<T> UiSystemHandle for UpdateHandle<T> {
+	type SystemInput = UpdateContext<'static, T>;
 	type SystemOutput = UpdateOutput;
 }
 
@@ -50,7 +50,7 @@ impl<T> SystemHandle for UpdateHandle<T> {
 #[require(Area)]
 pub struct RenderHandle(SmallVec<[RenderSystemId; N]>);
 
-impl SystemHandle for RenderHandle {
-	type SystemInput = RenderInput<'static>;
+impl UiSystemHandle for RenderHandle {
+	type SystemInput = RenderContext<'static>;
 	type SystemOutput = RenderOutput;
 }

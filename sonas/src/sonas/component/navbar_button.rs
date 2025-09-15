@@ -1,6 +1,6 @@
 use bevy_ecs::{
 	component::Component,
-	system::{In, InMut, Query, Res},
+	system::{Query, Res},
 };
 use color_eyre::eyre;
 use ratatui::{
@@ -63,11 +63,11 @@ impl NavbarButtonComponent {
 	}
 
 	fn render(
-		(In(entity), InMut(buf)): RenderInput,
+		context: RenderContext,
 		query: Query<(&Self, &Area)>,
 		cursor: Res<CursorPos>,
 	) -> eyre::Result<()> {
-		let (comp, area) = query.get(entity)?;
+		let (comp, area) = query.get(context.entity)?;
 		let area = **area;
 
 		let hovered = area.contains(Position::new(cursor.x, cursor.y));
@@ -76,14 +76,14 @@ impl NavbarButtonComponent {
 		if let Some(colour) = Self::bg_colour(hovered) {
 			block = block.bg(colour);
 		}
-		block.render_ref(area, buf);
+		block.render_ref(area, context.buffer);
 
 		let [text_area] = Layout::vertical(Constraint::from_lengths([1]))
 			.flex(Flex::Center)
 			.areas(block.inner(area));
 		format!("{} {}", comp.button_type.icon(), comp.button_type.text())
 			.bold()
-			.render(text_area, buf);
+			.render(text_area, context.buffer);
 
 		Ok(())
 	}
