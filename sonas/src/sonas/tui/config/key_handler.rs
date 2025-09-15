@@ -2,13 +2,13 @@ use std::time::Duration;
 
 use bevy_ecs::{
 	component::Component,
-	system::{In, InRef, Query, ResMut},
+	system::{Query, ResMut},
 };
 use color_eyre::eyre;
 
 use super::{KeyChord, KeyMap, KeyMapMatch};
 use crate::tui::{
-	ecs::{EventFlow, EventQueue, UiComponent, UiSystem, UpdateInput},
+	ecs::{EventFlow, EventQueue, UiComponent, UiSystem, UpdateContext},
 	event::{Dispatch, Event},
 };
 
@@ -48,13 +48,13 @@ where
 	}
 
 	fn update(
-		(In(entity), InRef(event)): UpdateInput<T>,
+		context: UpdateContext<T>,
 		mut event_queue: ResMut<EventQueue<T>>,
 		mut query: Query<&mut Self>,
 	) -> eyre::Result<EventFlow> {
-		let mut comp = query.get_mut(entity)?;
+		let mut comp = query.get_mut(context.entity)?;
 
-		let flow = match event {
+		let flow = match context.event {
 			Event::Tick(delta) => {
 				if !comp.key_map_match.matches(&comp.key_map).is_empty() {
 					comp.timeout += *delta;

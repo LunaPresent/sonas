@@ -1,6 +1,6 @@
 use bevy_ecs::{
 	component::Component,
-	system::{In, InMut, InRef, Query, Res},
+	system::{Query, Res},
 };
 use color_eyre::eyre;
 use crossterm::event::MouseButton;
@@ -38,12 +38,12 @@ impl ControlPanelComponent {
 	}
 
 	fn update(
-		(In(entity), InRef(event)): UpdateInput<AppEvent>,
+		context: UpdateContext<AppEvent>,
 		mut query: Query<&mut Self>,
 	) -> eyre::Result<EventFlow> {
-		let mut comp = query.get_mut(entity)?;
+		let mut comp = query.get_mut(context.entity)?;
 
-		Ok(match event {
+		Ok(match context.event {
 			Event::Mouse(mouse_event) => match mouse_event.kind {
 				crossterm::event::MouseEventKind::Down(MouseButton::Left) => {
 					comp.playing = !comp.playing;
@@ -56,14 +56,16 @@ impl ControlPanelComponent {
 	}
 
 	fn render(
-		(In(entity), InMut(buf)): RenderInput,
+		context: RenderContext,
 		theme: Res<Theme>,
 		query: Query<(&Self, &Area)>,
 	) -> eyre::Result<()> {
-		let (comp, area) = query.get(entity)?;
+		let (comp, area) = query.get(context.entity)?;
 		let area = **area;
 
-		Block::new().bg(theme.colours.overlay).render(area, buf);
+		Block::new()
+			.bg(theme.colours.overlay)
+			.render(area, context.buffer);
 
 		let [button_area] = Layout::vertical([Constraint::Length(1)])
 			.flex(ratatui::layout::Flex::Center)
@@ -72,7 +74,7 @@ impl ControlPanelComponent {
 			.flex(ratatui::layout::Flex::Center)
 			.areas(button_area);
 
-		comp.icon().render(button_area, buf);
+		comp.icon().render(button_area, context.buffer);
 
 		Ok(())
 	}

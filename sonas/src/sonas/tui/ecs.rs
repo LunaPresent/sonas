@@ -7,7 +7,7 @@ mod ui_component;
 pub use entity_commands_ext::EntityCommandsExt;
 pub use event_handling::{AsyncEventQueue, CursorPos, EventFlow, EventQueue, Focus};
 pub use rendering::{Area, Viewport};
-pub use ui_component::{InitInput, RenderInput, UiComponent, UiSystem, UpdateInput};
+pub use ui_component::{InitContext, RenderContext, UiComponent, UiSystem, UpdateContext};
 
 use bevy_ecs::{bundle::Bundle, entity::Entity, world::World};
 use color_eyre::eyre;
@@ -15,9 +15,9 @@ use ratatui::Frame;
 use tokio::sync::mpsc;
 
 use super::event::{Dispatch, Event, EventDispatch};
-use event_handling::UpdateContext;
+use event_handling::UpdateSystemRunner;
 use init::init_components;
-use rendering::RenderContext;
+use rendering::RenderSystemRunner;
 
 #[derive(Debug)]
 pub(crate) struct ComponentSystem<T>
@@ -25,8 +25,8 @@ where
 	T: 'static,
 {
 	world: World,
-	update_context: UpdateContext<T>,
-	render_context: RenderContext,
+	update_context: UpdateSystemRunner<T>,
+	render_context: RenderSystemRunner,
 }
 
 impl<T> ComponentSystem<T>

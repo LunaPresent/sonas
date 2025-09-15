@@ -7,8 +7,8 @@ use bevy_ecs::{
 };
 
 use super::{
-	InitHandle, InitInput, InitOutput, RenderHandle, RenderInput, RenderOutput, SystemHandle,
-	UpdateHandle, UpdateInput, UpdateOutput,
+	InitContext, InitHandle, InitOutput, RenderContext, RenderHandle, RenderOutput, UiSystemHandle,
+	UpdateContext, UpdateHandle, UpdateOutput,
 };
 
 // TODO: documentation
@@ -21,7 +21,7 @@ impl UiSystem {
 	pub fn init<M, S>(system: S) -> Self
 	where
 		M: Sync + Send + 'static,
-		S: IntoSystem<InitInput, InitOutput, M> + Sync + Send + Clone + 'static,
+		S: IntoSystem<InitContext, InitOutput, M> + Sync + Send + Clone + 'static,
 	{
 		Self::new::<InitHandle, M, S>(system)
 	}
@@ -31,7 +31,7 @@ impl UiSystem {
 	where
 		T: 'static,
 		M: Sync + Send + 'static,
-		S: IntoSystem<UpdateInput<'static, T>, UpdateOutput, M> + Sync + Send + Clone + 'static,
+		S: IntoSystem<UpdateContext<'static, T>, UpdateOutput, M> + Sync + Send + Clone + 'static,
 	{
 		Self::new::<UpdateHandle<T>, M, S>(system)
 	}
@@ -40,7 +40,7 @@ impl UiSystem {
 	pub fn render<M, S>(system: S) -> Self
 	where
 		M: Sync + Send + 'static,
-		S: IntoSystem<RenderInput<'static>, RenderOutput, M> + Sync + Send + Clone + 'static,
+		S: IntoSystem<RenderContext<'static>, RenderOutput, M> + Sync + Send + Clone + 'static,
 	{
 		Self::new::<RenderHandle, M, S>(system)
 	}
@@ -55,7 +55,7 @@ impl UiSystem {
 
 	fn new<H, M, S>(system: S) -> Self
 	where
-		H: SystemHandle + Component<Mutability = Mutable> + Default,
+		H: UiSystemHandle + Component<Mutability = Mutable> + Default,
 		M: Sync + Send + 'static,
 		S: IntoSystem<H::SystemInput, H::SystemOutput, M> + Sync + Send + Clone + 'static,
 	{
@@ -80,7 +80,7 @@ struct GenericSystemImpl<H, M, S> {
 
 impl<H, M, S> GenericSystem for GenericSystemImpl<H, M, S>
 where
-	H: SystemHandle + Component<Mutability = Mutable> + Default,
+	H: UiSystemHandle + Component<Mutability = Mutable> + Default,
 	M: Sync + Send + 'static,
 	S: IntoSystem<H::SystemInput, H::SystemOutput, M> + Sync + Send + Clone + 'static,
 {

@@ -21,6 +21,8 @@ use color_eyre::eyre;
 use crossterm::event::{MouseEvent, MouseEventKind};
 use ratatui::layout::Position;
 
+use crate::tui::ecs::UpdateContext;
+
 use super::{
 	Area, Dispatch, Event, EventDispatch, Viewport,
 	ui_component::{UpdateHandle, UpdateSystemId},
@@ -36,14 +38,14 @@ where
 }
 
 #[derive(Debug)]
-pub(crate) struct UpdateContext<T>
+pub(crate) struct UpdateSystemRunner<T>
 where
 	T: 'static,
 {
 	update_queue: Vec<EntityUpdateInfo<T>>,
 }
 
-impl<T> Default for UpdateContext<T> {
+impl<T> Default for UpdateSystemRunner<T> {
 	fn default() -> Self {
 		Self {
 			update_queue: Default::default(),
@@ -51,7 +53,7 @@ impl<T> Default for UpdateContext<T> {
 	}
 }
 
-impl<T> UpdateContext<T>
+impl<T> UpdateSystemRunner<T>
 where
 	T: 'static,
 {
@@ -82,7 +84,13 @@ where
 		Ok(match ed.dispatch {
 			Dispatch::Broadcast => {
 				for target in &self.update_queue {
-					world.run_system_with(target.system, (target.entity, &ed.event))??;
+					world.run_system_with(
+						target.system,
+						UpdateContext {
+							entity: target.entity,
+							event: &ed.event,
+						},
+					)??;
 				}
 				Some(ed.event)
 			}
@@ -106,7 +114,13 @@ where
 			}
 			prev_entity = target.entity;
 
-			let flow = world.run_system_with(target.system, (target.entity, &event))??;
+			let flow = world.run_system_with(
+				target.system,
+				UpdateContext {
+					entity: target.entity,
+					event: &event,
+				},
+			)??;
 			match flow {
 				EventFlow::Consume => consume = true,
 				EventFlow::Propagate => (),

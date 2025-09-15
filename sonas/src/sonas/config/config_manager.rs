@@ -10,19 +10,16 @@ use std::{
 use ::config::{Config, File};
 use bevy_ecs::{
 	component::Component,
-	system::{Commands, In, InRef, Query, ResMut},
+	system::{Commands, Query, ResMut},
 };
 use color_eyre::eyre::{self, OptionExt};
 use config::FileFormat;
 use notify::{RecommendedWatcher, RecursiveMode, Watcher as _};
 
-use super::AppConfig;
-use crate::{
-	config::{Keys, Theme},
-	tui::{
-		ecs::{EventFlow, InitInput, UiComponent, UiSystem, UpdateInput},
-		event::Event,
-	},
+use super::{AppConfig, Keys, Theme};
+use crate::tui::{
+	ecs::{EventFlow, InitContext, UiComponent, UiSystem, UpdateContext},
+	event::Event,
 };
 
 #[derive(Debug, Component)]
@@ -61,11 +58,11 @@ where
 	}
 
 	fn init(
-		In(entity): InitInput,
+		context: InitContext,
 		mut query: Query<&mut Self>,
 		mut cmd: Commands,
 	) -> eyre::Result<()> {
-		let mut comp = query.get_mut(entity)?;
+		let mut comp = query.get_mut(context.entity)?;
 
 		let config = comp.parse_config()?;
 
@@ -90,13 +87,13 @@ where
 	}
 
 	fn update(
-		(In(entity), InRef(event)): UpdateInput<T>,
+		context: UpdateContext<T>,
 		query: Query<&Self>,
 		mut keys: ResMut<Keys>,
 		mut theme: ResMut<Theme>,
 	) -> eyre::Result<EventFlow> {
-		let comp = query.get(entity)?;
-		if let Event::Tick(_) = event
+		let comp = query.get(context.entity)?;
+		if let Event::Tick(_) = context.event
 			&& comp
 				.changed
 				.compare_exchange(true, false, Ordering::Relaxed, Ordering::Relaxed)

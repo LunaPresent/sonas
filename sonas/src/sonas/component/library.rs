@@ -3,7 +3,7 @@ use std::iter;
 use bevy_ecs::{
 	component::Component,
 	entity::Entity,
-	system::{Commands, In, InMut, InRef, Query, Res, ResMut},
+	system::{Commands, Query, Res, ResMut},
 };
 use color_eyre::eyre;
 use ratatui::{
@@ -58,13 +58,13 @@ impl Default for LibraryComponent {
 
 impl LibraryComponent {
 	fn init(
-		In(entity): InitInput,
+		context: InitContext,
 		mut focus: ResMut<Focus>,
 		mut query: Query<&mut Self>,
 		mut cmd: Commands,
 	) -> eyre::Result<()> {
-		let mut comp = query.get_mut(entity)?;
-		let mut ec = cmd.entity(entity);
+		let mut comp = query.get_mut(context.entity)?;
+		let mut ec = cmd.entity(context.entity);
 
 		comp.album_cards.reserve(50);
 		for _ in 0..50 {
@@ -77,20 +77,20 @@ impl LibraryComponent {
 	}
 
 	fn update(
-		(In(entity), InRef(event)): UpdateInput<AppEvent>,
+		context: UpdateContext<AppEvent>,
 		mut focus: ResMut<Focus>,
 		mut event_queue: ResMut<EventQueue<AppEvent>>,
 		mut query: Query<&mut Self>,
 		areas: Query<&Area>,
 	) -> eyre::Result<EventFlow> {
-		let mut comp = query.get_mut(entity)?;
-		let flow = match event {
+		let mut comp = query.get_mut(context.entity)?;
+		let flow = match context.event {
 			Event::App(AppEvent::MoveCursor(direction)) => {
 				comp.move_cursor(*direction);
 				if let Some(target) = comp.album_cards.get(comp.selected_idx as usize) {
 					focus.target = *target;
 					let area = areas.get(*target)?;
-					event_queue.push(Dispatch::Target(entity), AppEvent::ScrollTo(**area));
+					event_queue.push(Dispatch::Target(context.entity), AppEvent::ScrollTo(**area));
 				}
 				EventFlow::Consume
 			}
@@ -100,15 +100,17 @@ impl LibraryComponent {
 	}
 
 	fn render(
-		(In(entity), InMut(buf)): RenderInput,
+		context: RenderContext,
 		theme: Res<Theme>,
 		mut query: Query<&mut Self>,
 		mut areas: Query<&mut Area>,
 	) -> eyre::Result<()> {
-		let mut comp = query.get_mut(entity)?;
-		let area = **areas.get(entity)?;
+		let mut comp = query.get_mut(context.entity)?;
+		let area = **areas.get(context.entity)?;
 
-		Block::new().bg(theme.colours.background).render(area, buf);
+		Block::new()
+			.bg(theme.colours.background)
+			.render(area, context.buffer);
 
 		let horizontal_fit = (area.width / (CARD_WIDTH + HORIZONTAL_GAP)) as usize;
 		let vertical_fit = (area.height / (CARD_HEIGHT + VERTICAL_GAP)) as usize;

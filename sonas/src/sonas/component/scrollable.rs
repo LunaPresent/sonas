@@ -1,8 +1,4 @@
-use bevy_ecs::{
-	component::Component,
-	entity::Entity,
-	system::{In, InMut, InRef, Query},
-};
+use bevy_ecs::{component::Component, entity::Entity, system::Query};
 use color_eyre::eyre;
 use ratatui::layout::{Rect, Size};
 
@@ -45,11 +41,11 @@ where
 	}
 
 	fn update(
-		(In(entity), InRef(event)): UpdateInput<AppEvent>,
+		context: UpdateContext<AppEvent>,
 		mut query: Query<(&mut Viewport, &Area)>,
 	) -> eyre::Result<EventFlow> {
-		let (mut viewport, area) = query.get_mut(entity)?;
-		Ok(match event {
+		let (mut viewport, area) = query.get_mut(context.entity)?;
+		Ok(match context.event {
 			Event::App(AppEvent::ScrollBy { direction, amount }) => {
 				Self::scroll(
 					viewport.as_mut(),
@@ -86,12 +82,12 @@ where
 	}
 
 	fn render(
-		(In(entity), InMut(_buf)): RenderInput,
+		context: RenderContext,
 		mut query: Query<(&Self, &mut Viewport)>,
 		mut areas: Query<&mut Area>,
 	) -> eyre::Result<()> {
-		let (comp, mut viewport) = query.get_mut(entity)?;
-		let area = **areas.get(entity)?;
+		let (comp, mut viewport) = query.get_mut(context.entity)?;
+		let area = **areas.get(context.entity)?;
 		viewport.size = (comp.size_fn)(area);
 		viewport.clamp_offset(area.as_size())?;
 		**areas.get_mut(comp.inner)? = viewport.area();

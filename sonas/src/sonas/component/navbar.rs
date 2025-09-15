@@ -1,7 +1,7 @@
 use bevy_ecs::{
 	component::Component,
 	entity::Entity,
-	system::{Commands, In, InMut, Query},
+	system::{Commands, Query},
 };
 use color_eyre::eyre;
 use ratatui::layout::{Constraint, Layout};
@@ -24,12 +24,12 @@ impl UiComponent for NavbarComponent {
 
 impl NavbarComponent {
 	fn init(
-		In(entity): InitInput,
+		context: InitContext,
 		mut query: Query<&mut Self>,
 		mut cmd: Commands,
 	) -> eyre::Result<()> {
-		let mut comp = query.get_mut(entity)?;
-		let mut ec = cmd.entity(entity);
+		let mut comp = query.get_mut(context.entity)?;
+		let mut ec = cmd.entity(context.entity);
 
 		comp.buttons.reserve(3);
 		comp.buttons.push(
@@ -49,13 +49,13 @@ impl NavbarComponent {
 	}
 
 	fn render(
-		(In(entity), InMut(_buf)): RenderInput,
+		context: RenderContext,
 		query: Query<&Self>,
 		mut areas: Query<&mut Area>,
 		buttons: Query<&NavbarButtonComponent>,
 	) -> eyre::Result<()> {
-		let comp = query.get(entity)?;
-		let area = **areas.get(entity)?;
+		let comp = query.get(context.entity)?;
+		let area = **areas.get(context.entity)?;
 
 		let button_areas = Layout::horizontal(Constraint::from_lengths(comp.buttons.iter().map(
 			|entity| {

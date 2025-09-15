@@ -2,7 +2,7 @@ use bevy_ecs::{
 	change_detection::DetectChanges,
 	component::Component,
 	entity::Entity,
-	system::{Commands, In, InMut, InRef, Query, Res},
+	system::{Commands, Query, Res},
 };
 use color_eyre::eyre;
 use ratatui::{
@@ -49,15 +49,15 @@ impl Default for RootComponent {
 
 impl RootComponent {
 	fn init(
-		In(entity): InitInput,
+		context: InitContext,
 		key_config: Res<Keys>,
 		mut query: Query<&mut Self>,
 		mut cmd: Commands,
 	) -> eyre::Result<()> {
-		let mut comp = query.get_mut(entity)?;
+		let mut comp = query.get_mut(context.entity)?;
 		let library = cmd.spawn(LibraryComponent::default()).id();
 
-		let mut ec = cmd.entity(entity);
+		let mut ec = cmd.entity(context.entity);
 		ec.insert_if_new(KeyHandler::new(key_config.generate_key_map()));
 		comp.control_panel = ec.spawn_child(ControlPanelComponent::default()).id();
 		comp.nav_bar = ec.spawn_child(NavbarComponent::default()).id();
@@ -71,11 +71,11 @@ impl RootComponent {
 	}
 
 	fn update(
-		(In(entity), InRef(_event)): UpdateInput<AppEvent>,
+		context: UpdateContext<AppEvent>,
 		key_config: Res<Keys>,
 		mut query: Query<&mut KeyHandler<AppEvent>>,
 	) -> eyre::Result<EventFlow> {
-		let mut comp = query.get_mut(entity)?;
+		let mut comp = query.get_mut(context.entity)?;
 
 		if key_config.is_changed() && !key_config.is_added() {
 			*comp = KeyHandler::new(key_config.generate_key_map());
@@ -84,15 +84,17 @@ impl RootComponent {
 	}
 
 	fn render(
-		(In(entity), InMut(buf)): RenderInput,
+		context: RenderContext,
 		theme: Res<Theme>,
 		query: Query<&Self>,
 		mut areas: Query<&mut Area>,
 	) -> eyre::Result<()> {
-		let comp = query.get(entity)?;
-		let area = **areas.get(entity)?;
+		let comp = query.get(context.entity)?;
+		let area = **areas.get(context.entity)?;
 
-		Block::new().bg(theme.colours.background).render(area, buf);
+		Block::new()
+			.bg(theme.colours.background)
+			.render(area, context.buffer);
 
 		let [navbar_area, library_area, control_panel_area] = Layout::vertical([
 			Constraint::Length(1),
