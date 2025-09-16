@@ -25,10 +25,7 @@ where
 	F: Fn(Rect) -> Size + Send + Sync + 'static,
 {
 	fn systems() -> impl IntoIterator<Item = UiSystem> {
-		[
-			UiSystem::update(Self::update),
-			UiSystem::render(Self::render),
-		]
+		[UiSystem::new(Self::update), UiSystem::new(Self::render)]
 	}
 }
 

@@ -18,7 +18,7 @@ pub struct NavbarComponent {
 
 impl UiComponent for NavbarComponent {
 	fn systems() -> impl IntoIterator<Item = UiSystem> {
-		[UiSystem::init(Self::init), UiSystem::render(Self::render)]
+		[UiSystem::new(Self::init), UiSystem::new(Self::render)]
 	}
 }
 

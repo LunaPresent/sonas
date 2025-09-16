@@ -1,4 +1,8 @@
-use bevy_ecs::{entity::Entity, system::SystemInput};
+use bevy_ecs::{
+	component::{Component, Mutable},
+	entity::Entity,
+	system::SystemInput,
+};
 use color_eyre::eyre;
 use ratatui::buffer::Buffer;
 
@@ -7,7 +11,9 @@ use crate::tui::{ecs::EventFlow, event::Event};
 
 pub(crate) trait UiSystemContext: SystemInput {
 	type Result;
-	type Handle: UiSystemHandle<SystemInput = Self, SystemOutput = Self::Result>;
+	type Handle: UiSystemHandle<SystemInput = Self, SystemOutput = Self::Result>
+		+ Component<Mutability = Mutable>
+		+ Default;
 }
 
 #[derive(Debug, Clone, Copy)]

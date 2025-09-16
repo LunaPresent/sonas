@@ -17,7 +17,7 @@ pub struct AlbumCardComponent {}
 
 impl UiComponent for AlbumCardComponent {
 	fn systems() -> impl IntoIterator<Item = UiSystem> {
-		[UiSystem::render(Self::render)]
+		[UiSystem::new(Self::render)]
 	}
 }
 
