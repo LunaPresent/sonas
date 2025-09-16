@@ -3,7 +3,6 @@ use bevy_ecs::{
 	entity::Entity,
 	system::SystemInput,
 };
-use color_eyre::eyre;
 use ratatui::buffer::Buffer;
 
 use super::{InitHandle, RenderHandle, UiSystemHandle, UpdateHandle};
@@ -22,7 +21,7 @@ pub struct InitContext {
 }
 
 impl UiSystemContext for InitContext {
-	type Result = eyre::Result<()>;
+	type Result = ();
 	type Handle = InitHandle;
 }
 
@@ -45,7 +44,7 @@ impl<T> UiSystemContext for UpdateContext<'static, T>
 where
 	T: 'static,
 {
-	type Result = eyre::Result<EventFlow>;
+	type Result = EventFlow;
 	type Handle = UpdateHandle<T>;
 }
 
@@ -68,7 +67,7 @@ pub struct RenderContext<'a> {
 }
 
 impl UiSystemContext for RenderContext<'static> {
-	type Result = eyre::Result<()>;
+	type Result = ();
 	type Handle = RenderHandle;
 }
 

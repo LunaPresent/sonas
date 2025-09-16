@@ -1,6 +1,7 @@
 use std::ops;
 
 use bevy_ecs::{component::Component, system::SystemId};
+use color_eyre::eyre;
 use smallvec::SmallVec;
 
 use super::{InitContext, RenderContext, UiSystemContext, UpdateContext};
@@ -8,15 +9,14 @@ use crate::tui::ecs::Area;
 
 const N: usize = 3;
 
-pub(crate) type InitSystemId = SystemId<InitContext, <InitContext as UiSystemContext>::Result>;
-pub(crate) type UpdateSystemId<T> =
-	SystemId<UpdateContext<'static, T>, <UpdateContext<'static, T> as UiSystemContext>::Result>;
-pub(crate) type RenderSystemId =
-	SystemId<RenderContext<'static>, <RenderContext<'static> as UiSystemContext>::Result>;
+type UiSystemId<C> = SystemId<C, eyre::Result<<C as UiSystemContext>::Result>>;
+pub(crate) type InitSystemId = UiSystemId<InitContext>;
+pub(crate) type UpdateSystemId<T> = UiSystemId<UpdateContext<'static, T>>;
+pub(crate) type RenderSystemId = UiSystemId<RenderContext<'static>>;
 
 pub(crate) trait UiSystemHandle:
-	ops::Deref<Target = SmallVec<[SystemId<Self::SystemInput, Self::SystemOutput>; N]>>
-	+ ops::DerefMut<Target = SmallVec<[SystemId<Self::SystemInput, Self::SystemOutput>; N]>>
+	ops::Deref<Target = SmallVec<[UiSystemId<Self::SystemInput>; N]>>
+	+ ops::DerefMut<Target = SmallVec<[UiSystemId<Self::SystemInput>; N]>>
 {
 	type SystemInput: UiSystemContext + 'static;
 	type SystemOutput: 'static;
