@@ -1,11 +1,13 @@
 use bevy_ecs::{entity::Entity, system::SystemInput};
+use color_eyre::eyre;
 use ratatui::buffer::Buffer;
 
 use super::{InitHandle, RenderHandle, UiSystemHandle, UpdateHandle};
-use crate::tui::event::Event;
+use crate::tui::{ecs::EventFlow, event::Event};
 
-pub trait UiSystemContext: SystemInput {
-	type Handle: UiSystemHandle;
+pub(crate) trait UiSystemContext: SystemInput {
+	type Result;
+	type Handle: UiSystemHandle<SystemInput = Self, SystemOutput = Self::Result>;
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -14,6 +16,7 @@ pub struct InitContext {
 }
 
 impl UiSystemContext for InitContext {
+	type Result = eyre::Result<()>;
 	type Handle = InitHandle;
 }
 
@@ -32,10 +35,11 @@ pub struct UpdateContext<'a, T> {
 	pub event: &'a Event<T>,
 }
 
-impl<'a, T> UiSystemContext for UpdateContext<'a, T>
+impl<T> UiSystemContext for UpdateContext<'static, T>
 where
 	T: 'static,
 {
+	type Result = eyre::Result<EventFlow>;
 	type Handle = UpdateHandle<T>;
 }
 
@@ -57,7 +61,8 @@ pub struct RenderContext<'a> {
 	pub buffer: &'a mut Buffer,
 }
 
-impl<'a> UiSystemContext for RenderContext<'a> {
+impl UiSystemContext for RenderContext<'static> {
+	type Result = eyre::Result<()>;
 	type Handle = RenderHandle;
 }
 
