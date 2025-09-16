@@ -4,7 +4,6 @@ use bevy_ecs::{
 	component::Component,
 	system::{Query, ResMut},
 };
-use color_eyre::eyre;
 
 use super::{KeyChord, KeyMap, KeyMapMatch};
 use crate::tui::{
@@ -51,10 +50,12 @@ where
 		context: UpdateContext<T>,
 		mut event_queue: ResMut<EventQueue<T>>,
 		mut query: Query<&mut Self>,
-	) -> eyre::Result<EventFlow> {
-		let mut comp = query.get_mut(context.entity)?;
+	) -> EventFlow {
+		let mut comp = query
+			.get_mut(context.entity)
+			.expect("Self type component should be present on the entity");
 
-		let flow = match context.event {
+		match context.event {
 			Event::Tick(delta) => {
 				if !comp.key_map_match.matches(&comp.key_map).is_empty() {
 					comp.timeout += *delta;
@@ -89,7 +90,6 @@ where
 				}
 			}
 			_ => EventFlow::Propagate,
-		};
-		Ok(flow)
+		}
 	}
 }
