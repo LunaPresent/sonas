@@ -7,8 +7,8 @@ use bevy_ecs::{
 };
 
 use super::{
-	InitContext, InitHandle, InitOutput, RenderContext, RenderHandle, RenderOutput, UiSystemHandle,
-	UpdateContext, UpdateHandle, UpdateOutput,
+	InitContext, InitHandle, RenderContext, RenderHandle, UiSystemContext, UiSystemHandle,
+	UpdateContext, UpdateHandle,
 };
 
 // TODO: documentation
@@ -21,7 +21,11 @@ impl UiSystem {
 	pub fn init<M, S>(system: S) -> Self
 	where
 		M: Sync + Send + 'static,
-		S: IntoSystem<InitContext, InitOutput, M> + Sync + Send + Clone + 'static,
+		S: IntoSystem<InitContext, <InitContext as UiSystemContext>::Result, M>
+			+ Sync
+			+ Send
+			+ Clone
+			+ 'static,
 	{
 		Self::new::<InitHandle, M, S>(system)
 	}
@@ -31,7 +35,14 @@ impl UiSystem {
 	where
 		T: 'static,
 		M: Sync + Send + 'static,
-		S: IntoSystem<UpdateContext<'static, T>, UpdateOutput, M> + Sync + Send + Clone + 'static,
+		S: IntoSystem<
+				UpdateContext<'static, T>,
+				<UpdateContext<'static, T> as UiSystemContext>::Result,
+				M,
+			> + Sync
+			+ Send
+			+ Clone
+			+ 'static,
 	{
 		Self::new::<UpdateHandle<T>, M, S>(system)
 	}
@@ -40,7 +51,14 @@ impl UiSystem {
 	pub fn render<M, S>(system: S) -> Self
 	where
 		M: Sync + Send + 'static,
-		S: IntoSystem<RenderContext<'static>, RenderOutput, M> + Sync + Send + Clone + 'static,
+		S: IntoSystem<
+				RenderContext<'static>,
+				<RenderContext<'static> as UiSystemContext>::Result,
+				M,
+			> + Sync
+			+ Send
+			+ Clone
+			+ 'static,
 	{
 		Self::new::<RenderHandle, M, S>(system)
 	}
