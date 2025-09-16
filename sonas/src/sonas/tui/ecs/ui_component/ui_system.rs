@@ -1,15 +1,8 @@
 use std::marker::PhantomData;
 
-use bevy_ecs::{
-	component::{Component, Mutable},
-	system::IntoSystem,
-	world::EntityWorldMut,
-};
+use bevy_ecs::{system::IntoSystem, world::EntityWorldMut};
 
-use super::{
-	InitContext, InitHandle, RenderContext, RenderHandle, UiSystemContext, UiSystemHandle,
-	UpdateContext, UpdateHandle,
-};
+use super::UiSystemContext;
 
 // TODO: documentation
 pub struct UiSystem {
@@ -18,49 +11,18 @@ pub struct UiSystem {
 
 impl UiSystem {
 	// TODO: documentation
-	pub fn init<M, S>(system: S) -> Self
+	pub fn new<C, M, S>(system: S) -> Self
 	where
-		M: Sync + Send + 'static,
-		S: IntoSystem<InitContext, <InitContext as UiSystemContext>::Result, M>
-			+ Sync
-			+ Send
-			+ Clone
-			+ 'static,
+		C: UiSystemContext + 'static,
+		M: 'static,
+		S: IntoSystem<C, C::Result, M> + Sync + Send + Clone + 'static,
 	{
-		Self::new::<InitHandle, M, S>(system)
-	}
-
-	// TODO: documentation
-	pub fn update<T, M, S>(system: S) -> Self
-	where
-		T: 'static,
-		M: Sync + Send + 'static,
-		S: IntoSystem<
-				UpdateContext<'static, T>,
-				<UpdateContext<'static, T> as UiSystemContext>::Result,
-				M,
-			> + Sync
-			+ Send
-			+ Clone
-			+ 'static,
-	{
-		Self::new::<UpdateHandle<T>, M, S>(system)
-	}
-
-	// TODO: documentation
-	pub fn render<M, S>(system: S) -> Self
-	where
-		M: Sync + Send + 'static,
-		S: IntoSystem<
-				RenderContext<'static>,
-				<RenderContext<'static> as UiSystemContext>::Result,
-				M,
-			> + Sync
-			+ Send
-			+ Clone
-			+ 'static,
-	{
-		Self::new::<RenderHandle, M, S>(system)
+		Self {
+			boxed_system: Box::new(GenericSystemImpl::<C, M, S> {
+				system,
+				phantom_data: PhantomData,
+			}),
+		}
 	}
 
 	pub(crate) fn register(&self, entity_world: &mut EntityWorldMut) {
@@ -70,20 +32,6 @@ impl UiSystem {
 	pub(crate) fn unregister(&self, entity_world: &mut EntityWorldMut) {
 		self.boxed_system.unregister(entity_world);
 	}
-
-	fn new<H, M, S>(system: S) -> Self
-	where
-		H: UiSystemHandle + Component<Mutability = Mutable> + Default,
-		M: Sync + Send + 'static,
-		S: IntoSystem<H::SystemInput, H::SystemOutput, M> + Sync + Send + Clone + 'static,
-	{
-		Self {
-			boxed_system: Box::new(GenericSystemImpl::<H, M, S> {
-				system,
-				phantom_data: PhantomData,
-			}),
-		}
-	}
 }
 
 trait GenericSystem {
@@ -91,25 +39,24 @@ trait GenericSystem {
 	fn unregister(&self, entity_world: &mut EntityWorldMut);
 }
 
-struct GenericSystemImpl<H, M, S> {
+struct GenericSystemImpl<C, M, S> {
 	system: S,
-	phantom_data: PhantomData<fn() -> (H, M)>,
+	phantom_data: PhantomData<fn() -> (C, M)>,
 }
 
-impl<H, M, S> GenericSystem for GenericSystemImpl<H, M, S>
+impl<C, M, S> GenericSystem for GenericSystemImpl<C, M, S>
 where
-	H: UiSystemHandle + Component<Mutability = Mutable> + Default,
-	M: Sync + Send + 'static,
-	S: IntoSystem<H::SystemInput, H::SystemOutput, M> + Sync + Send + Clone + 'static,
+	C: UiSystemContext + 'static,
+	S: IntoSystem<C, C::Result, M> + Clone + 'static,
 {
 	fn register(&self, entity_world: &mut EntityWorldMut) {
 		let system_id = unsafe {
 			let world = entity_world.world_mut();
 			world.register_system_cached(self.system.clone())
 		};
-		entity_world.insert_if_new(H::default());
+		entity_world.insert_if_new(C::Handle::default());
 		let mut handle = entity_world
-			.get_mut::<H>()
+			.get_mut::<C::Handle>()
 			.expect("Handle should have just been inserted");
 		handle.push(system_id);
 	}
@@ -119,7 +66,7 @@ where
 			let world = entity_world.world_mut();
 			world.register_system_cached(self.system.clone())
 		};
-		if let Some(mut handle) = entity_world.get_mut::<H>()
+		if let Some(mut handle) = entity_world.get_mut::<C::Handle>()
 			&& let Some(i) = handle
 				.iter()
 				.enumerate()

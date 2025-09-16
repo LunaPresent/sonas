@@ -40,7 +40,7 @@ where
 	T: Send + Sync + 'static,
 {
 	fn systems() -> impl IntoIterator<Item = UiSystem> {
-		[UiSystem::init(Self::init), UiSystem::update(Self::update)]
+		[UiSystem::new(Self::init), UiSystem::new(Self::update)]
 	}
 }
 

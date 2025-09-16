@@ -30,9 +30,9 @@ pub struct RootComponent {
 impl UiComponent for RootComponent {
 	fn systems() -> impl IntoIterator<Item = UiSystem> {
 		[
-			UiSystem::init(Self::init),
-			UiSystem::update(Self::update),
-			UiSystem::render(Self::render),
+			UiSystem::new(Self::init),
+			UiSystem::new(Self::update),
+			UiSystem::new(Self::render),
 		]
 	}
 }

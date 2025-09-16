@@ -25,10 +25,7 @@ pub struct ControlPanelComponent {
 
 impl UiComponent for ControlPanelComponent {
 	fn systems() -> impl IntoIterator<Item = UiSystem> {
-		[
-			UiSystem::update(Self::update),
-			UiSystem::render(Self::render),
-		]
+		[UiSystem::new(Self::update), UiSystem::new(Self::render)]
 	}
 }
 
