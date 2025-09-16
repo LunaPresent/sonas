@@ -7,20 +7,29 @@ use std::{
 	},
 };
 
-use ::config::{Config, File};
+use ::config::{Config, ConfigError, File, FileFormat};
 use bevy_ecs::{
 	component::Component,
 	system::{Commands, Query, ResMut},
 };
-use color_eyre::eyre::{self, OptionExt};
-use config::FileFormat;
-use notify::{RecommendedWatcher, RecursiveMode, Watcher as _};
+use notify::{Error as NotifyError, RecommendedWatcher, RecursiveMode, Watcher as _};
+use thiserror::Error;
 
 use super::{AppConfig, Keys, Theme};
 use crate::tui::{
 	ecs::{EventFlow, InitContext, UiComponent, UiSystem, UpdateContext},
 	event::Event,
 };
+
+#[derive(Debug, Error)]
+pub enum ConfigManagerError {
+	#[error("failed to initialise file watch on config file")]
+	FailedFileWatch(#[from] NotifyError),
+	#[error("failed to parse config file")]
+	FailedToParse(#[from] ConfigError),
+	#[error("failed to convert config file path to string")]
+	InvalidPath,
+}
 
 #[derive(Debug, Component)]
 #[component(on_add = Self::register_systems)]
@@ -61,8 +70,10 @@ where
 		context: InitContext,
 		mut query: Query<&mut Self>,
 		mut cmd: Commands,
-	) -> eyre::Result<()> {
-		let mut comp = query.get_mut(context.entity)?;
+	) -> Result<(), ConfigManagerError> {
+		let mut comp = query
+			.get_mut(context.entity)
+			.expect("Self type component should be present on the entity");
 
 		let config = comp.parse_config()?;
 
@@ -91,8 +102,10 @@ where
 		query: Query<&Self>,
 		mut keys: ResMut<Keys>,
 		mut theme: ResMut<Theme>,
-	) -> eyre::Result<EventFlow> {
-		let comp = query.get(context.entity)?;
+	) -> Result<EventFlow, ConfigManagerError> {
+		let comp = query
+			.get(context.entity)
+			.expect("Self type component should be present on the entity");
 		if let Event::Tick(_) = context.event
 			&& comp
 				.changed
@@ -106,7 +119,7 @@ where
 		Ok(EventFlow::Propagate)
 	}
 
-	fn parse_config(&self) -> eyre::Result<AppConfig> {
+	fn parse_config(&self) -> Result<AppConfig, ConfigManagerError> {
 		let mut builder = Config::builder().add_source(File::from_str(
 			include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/.config/config.toml")),
 			FileFormat::Toml,
@@ -117,7 +130,7 @@ where
 					file_path
 						.as_path()
 						.to_str()
-						.ok_or_eyre("failed to convert config file path to string")?,
+						.ok_or(ConfigManagerError::InvalidPath)?,
 				)
 				.required(false),
 			);
