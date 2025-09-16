@@ -21,7 +21,7 @@ pub trait UiComponent {
 		let mut cmd = world.commands();
 		let mut entity_cmd = cmd.entity(context.entity);
 		entity_cmd.queue(move |mut entity_world: EntityWorldMut| {
-			for system in Self::systems() {
+			for mut system in Self::systems() {
 				system.register(&mut entity_world);
 			}
 		});
@@ -32,7 +32,7 @@ pub trait UiComponent {
 		let mut cmd = world.commands();
 		let mut entity_cmd = cmd.entity(context.entity);
 		entity_cmd.queue(move |mut entity_world: EntityWorldMut| {
-			for system in Self::systems() {
+			for mut system in Self::systems() {
 				system.unregister(&mut entity_world);
 			}
 		});
