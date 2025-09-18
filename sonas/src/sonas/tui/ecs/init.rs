@@ -5,10 +5,10 @@ use bevy_ecs::{
 	world::World,
 };
 
-use crate::tui::ecs::{InitContext, ui_component::InitHandle};
+use crate::tui::ecs::{InitContext, ui_component::InitSystemCollection};
 
 pub(crate) fn init_components(
-	query: Query<(&mut InitHandle, Entity), Changed<InitHandle>>,
+	query: Query<(&mut InitSystemCollection, Entity), Changed<InitSystemCollection>>,
 	mut commands: Commands,
 ) {
 	let mut repeat = false;

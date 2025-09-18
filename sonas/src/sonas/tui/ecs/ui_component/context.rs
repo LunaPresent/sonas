@@ -5,12 +5,14 @@ use bevy_ecs::{
 };
 use ratatui::buffer::Buffer;
 
-use super::{InitHandle, RenderHandle, UiSystemHandle, UpdateHandle};
+use super::{
+	InitSystemCollection, RenderSystemCollection, UiSystemCollection, UpdateSystemCollection,
+};
 use crate::tui::{ecs::EventFlow, event::Event};
 
 pub(crate) trait UiSystemContext: SystemInput {
 	type Result;
-	type Handle: UiSystemHandle<SystemInput = Self, SystemOutput = Self::Result>
+	type Handle: UiSystemCollection<SystemInput = Self, SystemOutput = Self::Result>
 		+ Component<Mutability = Mutable>
 		+ Default;
 }
@@ -22,7 +24,7 @@ pub struct InitContext {
 
 impl UiSystemContext for InitContext {
 	type Result = ();
-	type Handle = InitHandle;
+	type Handle = InitSystemCollection;
 }
 
 impl SystemInput for InitContext {
@@ -45,7 +47,7 @@ where
 	T: 'static,
 {
 	type Result = EventFlow;
-	type Handle = UpdateHandle<T>;
+	type Handle = UpdateSystemCollection<T>;
 }
 
 impl<T> SystemInput for UpdateContext<'_, T>
@@ -68,7 +70,7 @@ pub struct RenderContext<'a> {
 
 impl UiSystemContext for RenderContext<'static> {
 	type Result = ();
-	type Handle = RenderHandle;
+	type Handle = RenderSystemCollection;
 }
 
 impl SystemInput for RenderContext<'_> {

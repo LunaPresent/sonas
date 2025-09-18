@@ -25,7 +25,7 @@ use crate::tui::ecs::UpdateContext;
 
 use super::{
 	Area, Dispatch, Event, EventDispatch, Viewport,
-	ui_component::{UpdateHandle, UpdateSystemId},
+	ui_component::{UpdateSystemCollection, UpdateSystemId},
 };
 
 #[derive(Debug)]
@@ -132,7 +132,7 @@ where
 	fn find_input_entities(
 		InMut(targets): InMut<Vec<EntityUpdateInfo<T>>>,
 		focus: Res<Focus>,
-		handles: Query<&UpdateHandle<T>>,
+		handles: Query<&UpdateSystemCollection<T>>,
 		parents: Query<&ChildOf>,
 	) {
 		Self::bubble_entities(focus.target, targets, handles, parents);
@@ -140,7 +140,7 @@ where
 
 	fn find_broadcast_entities(
 		InMut(targets): InMut<Vec<EntityUpdateInfo<T>>>,
-		components: Query<(Entity, &UpdateHandle<T>)>,
+		components: Query<(Entity, &UpdateSystemCollection<T>)>,
 	) {
 		for (entity, handle) in components {
 			for &system in handle.iter() {
@@ -166,10 +166,10 @@ where
 		),
 		mut clicked: Local<Option<Entity>>,
 		mut cursor_pos: ResMut<CursorPos>,
-		broadcast_components: Query<(Entity, &UpdateHandle<T>)>,
+		broadcast_components: Query<(Entity, &UpdateSystemCollection<T>)>,
 		root_entities: Query<Entity, Without<ChildOf>>,
 		areas: Query<(Option<&Area>, Option<&Children>, Option<&Viewport>)>,
-		handles: Query<&UpdateHandle<T>>,
+		handles: Query<&UpdateSystemCollection<T>>,
 		parents: Query<&ChildOf>,
 	) -> eyre::Result<()> {
 		cursor_pos.x = x;
@@ -209,7 +209,7 @@ where
 
 	fn find_target_entities(
 		(InMut(targets), In(target)): (InMut<Vec<EntityUpdateInfo<T>>>, In<Entity>),
-		handles: Query<&UpdateHandle<T>>,
+		handles: Query<&UpdateSystemCollection<T>>,
 		parents: Query<&ChildOf>,
 	) {
 		Self::bubble_entities(target, targets, handles, parents);
@@ -218,7 +218,7 @@ where
 	fn bubble_entities(
 		head: Entity,
 		targets: &mut Vec<EntityUpdateInfo<T>>,
-		handles: Query<&UpdateHandle<T>>,
+		handles: Query<&UpdateSystemCollection<T>>,
 		parents: Query<&ChildOf>,
 	) {
 		if let Ok(handle) = handles.get(head) {
@@ -259,9 +259,6 @@ where
 	/// | .......0 | ....../ | ...........1 | recurse then none |
 	/// | .......1 | ......0 | ...........1 | none............. |
 	/// | .......1 | ......1 | ...........1 | recurse then self |
-	// BUG: making all components have a render handler and thus also an area has
-	// made it so this function now targets "blank" root components
-	// TODO: rework this, probably with a `Clickable` component
 	fn find_cursor_target_inner(
 		mut pos: Position,
 		entity: Entity,
