@@ -14,7 +14,7 @@ use ratatui::{
 };
 use thiserror::Error;
 
-use super::ui_component::{RenderContext, RenderHandle, RenderSystemId};
+use super::ui_component::{RenderContext, RenderSystemCollection, RenderSystemId};
 
 // TODO: documentation
 #[derive(Debug, Component, Default, Clone, Copy, Deref, DerefMut)]
@@ -118,7 +118,7 @@ impl RenderSystemRunner {
 	fn find_render_targets(
 		InMut(targets): InMut<Vec<EntityRenderInfo>>,
 		root_entities: Query<Entity, Without<ChildOf>>,
-		query: Query<(Option<&RenderHandle>, Option<&Children>)>,
+		query: Query<(Option<&RenderSystemCollection>, Option<&Children>)>,
 	) -> eyre::Result<()> {
 		for root in root_entities {
 			Self::recurse_render_targets(root, targets, query)?;
@@ -129,7 +129,7 @@ impl RenderSystemRunner {
 	fn recurse_render_targets(
 		head: Entity,
 		targets: &mut Vec<EntityRenderInfo>,
-		query: Query<(Option<&RenderHandle>, Option<&Children>)>,
+		query: Query<(Option<&RenderSystemCollection>, Option<&Children>)>,
 	) -> eyre::Result<usize> {
 		let idx = targets.len();
 		let (handle, children) = query.get(head)?;

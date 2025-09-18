@@ -1,10 +1,10 @@
 mod context;
-mod handle;
 mod ui_system;
+mod ui_system_collection;
 
 pub use context::*;
-pub(crate) use handle::*;
 pub use ui_system::*;
+pub(crate) use ui_system_collection::*;
 
 use bevy_ecs::{
 	component::HookContext,

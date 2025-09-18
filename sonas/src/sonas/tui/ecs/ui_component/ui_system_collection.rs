@@ -14,7 +14,7 @@ pub(crate) type InitSystemId = UiSystemId<InitContext>;
 pub(crate) type UpdateSystemId<T> = UiSystemId<UpdateContext<'static, T>>;
 pub(crate) type RenderSystemId = UiSystemId<RenderContext<'static>>;
 
-pub(crate) trait UiSystemHandle:
+pub(crate) trait UiSystemCollection:
 	ops::Deref<Target = SmallVec<[UiSystemId<Self::SystemInput>; N]>>
 	+ ops::DerefMut<Target = SmallVec<[UiSystemId<Self::SystemInput>; N]>>
 {
@@ -23,34 +23,34 @@ pub(crate) trait UiSystemHandle:
 }
 
 #[derive(Debug, Component, Default, Clone, derive_more::Deref, derive_more::DerefMut)]
-pub(crate) struct InitHandle(SmallVec<[InitSystemId; N]>);
+pub(crate) struct InitSystemCollection(SmallVec<[InitSystemId; N]>);
 
-impl UiSystemHandle for InitHandle {
+impl UiSystemCollection for InitSystemCollection {
 	type SystemInput = InitContext;
 	type SystemOutput = <InitContext as UiSystemContext>::Result;
 }
 
 #[derive(Debug, Component, Clone, derive_more::Deref, derive_more::DerefMut)]
-pub(crate) struct UpdateHandle<T>(SmallVec<[UpdateSystemId<T>; N]>)
+pub(crate) struct UpdateSystemCollection<T>(SmallVec<[UpdateSystemId<T>; N]>)
 where
 	T: 'static;
 
-impl<T> Default for UpdateHandle<T> {
+impl<T> Default for UpdateSystemCollection<T> {
 	fn default() -> Self {
 		Self(SmallVec::default())
 	}
 }
 
-impl<T> UiSystemHandle for UpdateHandle<T> {
+impl<T> UiSystemCollection for UpdateSystemCollection<T> {
 	type SystemInput = UpdateContext<'static, T>;
 	type SystemOutput = <UpdateContext<'static, T> as UiSystemContext>::Result;
 }
 
 #[derive(Debug, Component, Default, Clone, derive_more::Deref, derive_more::DerefMut)]
 #[require(Area)]
-pub(crate) struct RenderHandle(SmallVec<[RenderSystemId; N]>);
+pub(crate) struct RenderSystemCollection(SmallVec<[RenderSystemId; N]>);
 
-impl UiSystemHandle for RenderHandle {
+impl UiSystemCollection for RenderSystemCollection {
 	type SystemInput = RenderContext<'static>;
 	type SystemOutput = <RenderContext<'static> as UiSystemContext>::Result;
 }
