@@ -6,9 +6,13 @@ use bevy_ecs::{
 use ratatui::buffer::Buffer;
 
 use super::{
-	InitSystemCollection, RenderSystemCollection, UiSystemCollection, UpdateSystemCollection,
+	ErrorSystemCollection, InitSystemCollection, RenderSystemCollection, UiSystemCollection,
+	UpdateSystemCollection,
 };
-use crate::tui::{ecs::EventFlow, event::Event};
+use crate::tui::{
+	ecs::{EventFlow, error_handling::ErrorFlow},
+	event::Event,
+};
 
 pub(crate) trait UiSystemContext: SystemInput {
 	type Result;
@@ -76,6 +80,35 @@ impl UiSystemContext for RenderContext<'static> {
 impl SystemInput for RenderContext<'_> {
 	type Param<'i> = RenderContext<'i>;
 	type Inner<'i> = RenderContext<'i>;
+
+	fn wrap(this: Self::Inner<'_>) -> Self::Param<'_> {
+		this
+	}
+}
+
+#[derive(Debug)]
+pub struct ErrorContext<'a, E>
+where
+	E: 'static,
+{
+	pub entity: Entity,
+	pub error: &'a E,
+}
+
+impl<E> UiSystemContext for ErrorContext<'static, E>
+where
+	E: 'static,
+{
+	type Result = ErrorFlow;
+	type Handle = ErrorSystemCollection<E>;
+}
+
+impl<E> SystemInput for ErrorContext<'_, E>
+where
+	E: 'static,
+{
+	type Param<'i> = ErrorContext<'i, E>;
+	type Inner<'i> = ErrorContext<'i, E>;
 
 	fn wrap(this: Self::Inner<'_>) -> Self::Param<'_> {
 		this

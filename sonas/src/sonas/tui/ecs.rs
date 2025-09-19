@@ -1,13 +1,18 @@
 mod entity_commands_ext;
+mod error_handling;
 mod event_handling;
 mod init;
+mod into_result;
 mod rendering;
 mod ui_component;
 
 pub use entity_commands_ext::EntityCommandsExt;
+pub use error_handling::ErrorFlow;
 pub use event_handling::{AsyncEventQueue, CursorPos, EventFlow, EventQueue, Focus};
 pub use rendering::{Area, Viewport};
-pub use ui_component::{InitContext, RenderContext, UiComponent, UiSystem, UpdateContext};
+pub use ui_component::{
+	ErrorContext, InitContext, RenderContext, UiComponent, UiSystem, UpdateContext,
+};
 
 use bevy_ecs::{bundle::Bundle, entity::Entity, world::World};
 use color_eyre::eyre;

@@ -1,11 +1,9 @@
-/// Signify whether an [`update system`][us] should consume or propagate an event
+/// Signify whether an update system should consume or propagate an event
 ///
-/// This value must be returned from an [`update system`][us] to tell the dispatcher
+/// This value must be returned from an update system to tell the dispatcher
 /// how it should handle the event after running the system with it
 /// The value is ignored if the event was dispatched as [`Dispatch::Broadcast`]
-///
-/// [us]: super::UpdateSystem
-#[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum EventFlow {
 	/// Signal to the system dispatcher to stop propagating the event
 	Consume,
