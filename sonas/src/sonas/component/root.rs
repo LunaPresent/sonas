@@ -11,7 +11,9 @@ use ratatui::{
 	widgets::{Block, Widget},
 };
 
-use super::{ControlPanelComponent, LibraryComponent, NavbarComponent, ScrollableComponent};
+use super::{
+	ControlPanelComponent, LibraryComponent, LoggerComponent, NavbarComponent, ScrollableComponent,
+};
 use crate::{
 	app_event::AppEvent,
 	config::{Keys, Theme},
@@ -58,6 +60,7 @@ impl RootComponent {
 		let library = cmd.spawn(LibraryComponent::default()).id();
 
 		let mut ec = cmd.entity(context.entity);
+		ec.insert_if_new(LoggerComponent::new());
 		ec.insert_if_new(KeyHandler::new(key_config.generate_key_map()));
 		comp.control_panel = ec.spawn_child(ControlPanelComponent::default()).id();
 		comp.nav_bar = ec.spawn_child(NavbarComponent::default()).id();
