@@ -14,7 +14,10 @@ use ratatui::{
 };
 use thiserror::Error;
 
-use super::ui_component::{RenderContext, RenderSystemCollection, RenderSystemId};
+use super::{
+	error_handling::UiSystemResultExt as _,
+	ui_component::{RenderContext, RenderSystemCollection, RenderSystemId},
+};
 
 // TODO: documentation
 #[derive(Debug, Component, Default, Clone, Copy, Deref, DerefMut)]
@@ -94,13 +97,15 @@ impl RenderSystemRunner {
 		for i in 0..self.render_queue.len() {
 			let target = self.render_queue[i];
 			if let Some(system) = target.system {
-				world.run_system_with(
-					system,
-					RenderContext {
-						entity: target.entity,
-						buffer: buf,
-					},
-				)??;
+				world
+					.run_system_with(
+						system,
+						RenderContext {
+							entity: target.entity,
+							buffer: buf,
+						},
+					)?
+					.handle(target.entity, world)?;
 			}
 
 			world.run_system_once_with(Self::handle_viewports, (self, i, buf))??;

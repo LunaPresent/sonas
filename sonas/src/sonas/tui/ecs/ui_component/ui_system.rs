@@ -1,42 +1,17 @@
 use core::mem;
-use std::{convert::Infallible, marker::PhantomData};
+use std::marker::PhantomData;
 
 use bevy_ecs::{
-	system::{In, IntoSystem, SystemId},
+	system::{IntoSystem, SystemId},
 	world::{EntityWorldMut, World},
 };
 use color_eyre::eyre;
 
 use super::UiSystemContext;
-
-pub trait IntoResult<T> {
-	type Error;
-
-	fn into_result(self) -> Result<T, Self::Error>;
-}
-
-impl<T> IntoResult<T> for T {
-	type Error = Infallible;
-
-	fn into_result(self) -> Result<T, Self::Error> {
-		Ok(self)
-	}
-}
-
-impl<T, E> IntoResult<T> for Result<T, E> {
-	type Error = E;
-
-	fn into_result(self) -> Result<T, Self::Error> {
-		self
-	}
-}
-
-fn handle_system_result<R, T>(In(result): In<R>) -> eyre::Result<T>
-where
-	R: IntoResult<T, Error: Into<eyre::Report>>,
-{
-	result.into_result().map_err(|e| e.into())
-}
+use crate::tui::ecs::{
+	error_handling::{UiSystemError, map_system_error},
+	into_result::IntoResult,
+};
 
 // TODO: documentation
 pub struct UiSystem {
@@ -48,7 +23,7 @@ impl UiSystem {
 	pub fn new<C, R, M, S>(system: S) -> Self
 	where
 		C: UiSystemContext + 'static,
-		R: IntoResult<C::Result, Error: Into<eyre::Report>> + 'static,
+		R: IntoResult<C::Result, Error: Into<eyre::Report> + core::fmt::Debug> + 'static,
 		M: 'static,
 		S: IntoSystem<C, R, M> + Sync + Send + Clone + 'static,
 	{
@@ -83,7 +58,7 @@ where
 impl<C, R, M, S> GenericSystem for GenericSystemImpl<C, R, M, S>
 where
 	C: UiSystemContext + 'static,
-	R: IntoResult<C::Result, Error: Into<eyre::Report>> + 'static,
+	R: IntoResult<C::Result, Error: Into<eyre::Report> + core::fmt::Debug> + 'static,
 	S: IntoSystem<C, R, M> + Clone + 'static,
 {
 	fn register(&mut self, entity_world: &mut EntityWorldMut) {
@@ -119,19 +94,19 @@ where
 	C: UiSystemContext,
 {
 	System(S, PhantomData<fn() -> (R, M)>),
-	Id(SystemId<C, eyre::Result<C::Result>>),
+	Id(SystemId<C, Result<C::Result, UiSystemError>>),
 }
 
 impl<C, R, M, S> CachedSystemRegistrar<C, R, M, S>
 where
 	C: UiSystemContext + 'static,
-	R: IntoResult<C::Result, Error: Into<eyre::Report>> + 'static,
+	R: IntoResult<C::Result, Error: Into<eyre::Report> + core::fmt::Debug> + 'static,
 	S: IntoSystem<C, R, M> + Clone + 'static,
 {
-	fn register(&mut self, world: &mut World) -> SystemId<C, eyre::Result<C::Result>> {
+	fn register(&mut self, world: &mut World) -> SystemId<C, Result<C::Result, UiSystemError>> {
 		match self {
 			Self::System(system, _) => {
-				let system = system.clone().pipe(handle_system_result);
+				let system = system.clone().map(map_system_error);
 
 				let system_id = world.register_system_cached(system);
 				let _ = mem::replace(self, Self::Id(system_id));

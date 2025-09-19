@@ -21,10 +21,9 @@ use color_eyre::eyre;
 use crossterm::event::{MouseEvent, MouseEventKind};
 use ratatui::layout::Position;
 
-use crate::tui::ecs::UpdateContext;
-
 use super::{
-	Area, Dispatch, Event, EventDispatch, Viewport,
+	Area, Dispatch, Event, EventDispatch, UpdateContext, Viewport,
+	error_handling::UiSystemResultExt as _,
 	ui_component::{UpdateSystemCollection, UpdateSystemId},
 };
 
@@ -84,13 +83,15 @@ where
 		Ok(match ed.dispatch {
 			Dispatch::Broadcast => {
 				for target in &self.update_queue {
-					world.run_system_with(
-						target.system,
-						UpdateContext {
-							entity: target.entity,
-							event: &ed.event,
-						},
-					)??;
+					world
+						.run_system_with(
+							target.system,
+							UpdateContext {
+								entity: target.entity,
+								event: &ed.event,
+							},
+						)?
+						.handle(target.entity, world)?;
 				}
 				Some(ed.event)
 			}
@@ -114,16 +115,18 @@ where
 			}
 			prev_entity = target.entity;
 
-			let flow = world.run_system_with(
-				target.system,
-				UpdateContext {
-					entity: target.entity,
-					event: &event,
-				},
-			)??;
+			let flow = world
+				.run_system_with(
+					target.system,
+					UpdateContext {
+						entity: target.entity,
+						event: &event,
+					},
+				)?
+				.handle(target.entity, world)?;
 			match flow {
-				EventFlow::Consume => consume = true,
-				EventFlow::Propagate => (),
+				Some(EventFlow::Propagate) => (),
+				_ => consume = true,
 			}
 		}
 		if consume { Ok(None) } else { Ok(Some(event)) }
