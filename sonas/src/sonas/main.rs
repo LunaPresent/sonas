@@ -20,6 +20,6 @@ async fn main() -> eyre::Result<()> {
 	let cli = Cli::new();
 	let app = App::<AppEvent>::new()
 		.with_component(ConfigManager::<AppEvent>::new(cli.config_path()))?
-		.with_main_component(RootComponent::default())?;
+		.with_component(RootComponent::default())?;
 	app.run().await
 }

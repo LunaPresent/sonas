@@ -56,10 +56,6 @@ where
 		self.world.spawn(component_bundle).id()
 	}
 
-	pub fn set_focus(&mut self, target: Entity) {
-		self.world.resource_mut::<Focus>().target = target;
-	}
-
 	pub fn init(&mut self) -> eyre::Result<()> {
 		self.world.flush();
 		self.world.run_system_cached(init_components)?;

@@ -74,14 +74,6 @@ where
 		Ok(self)
 	}
 
-	/// Adds a new component to the bevy ecs and focusses it
-	pub fn with_main_component(mut self, component_bundle: impl Bundle) -> eyre::Result<Self> {
-		let entity = self.ecs.add_component(component_bundle);
-		self.ecs.set_focus(entity);
-		self.ecs.init()?;
-		Ok(self)
-	}
-
 	/// Runs the `App` until completion
 	pub async fn run(mut self) -> eyre::Result<()> {
 		let mut tui = Terminal::new()?;
