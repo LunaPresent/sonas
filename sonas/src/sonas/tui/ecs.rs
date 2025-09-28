@@ -9,7 +9,7 @@ mod ui_component;
 pub use entity_commands_ext::EntityCommandsExt;
 pub use error_handling::ErrorFlow;
 pub use event_handling::{AsyncEventQueue, CursorPos, EventFlow, EventQueue, Focus};
-pub use rendering::{Area, Viewport};
+pub use rendering::{Area, Viewport, ZOrder};
 pub use ui_component::{
 	ErrorContext, InitContext, RenderContext, UiComponent, UiSystem, UpdateContext,
 };
