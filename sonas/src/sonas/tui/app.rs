@@ -1,6 +1,9 @@
+mod entity_builder;
+
+pub use entity_builder::EntityBuilder;
+
 use std::io;
 
-use bevy_ecs::bundle::Bundle;
 use color_eyre::eyre;
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
@@ -67,19 +70,11 @@ where
 		}
 	}
 
-	/// Adds a new component to the bevy ecs
-	pub fn with_component(mut self, component_bundle: impl Bundle) -> eyre::Result<Self> {
-		self.ecs.add_component(component_bundle);
-		self.ecs.init()?;
-		Ok(self)
-	}
-
-	/// Adds a new component to the bevy ecs and focusses it
-	pub fn with_main_component(mut self, component_bundle: impl Bundle) -> eyre::Result<Self> {
-		let entity = self.ecs.add_component(component_bundle);
-		self.ecs.set_focus(entity);
-		self.ecs.init()?;
-		Ok(self)
+	pub fn with_entity(
+		mut self,
+		f: impl FnOnce(EntityBuilder<T>) -> eyre::Result<EntityBuilder<T>>,
+	) -> eyre::Result<Self> {
+		Ok((f)(EntityBuilder::new(self.ecs.add_entity(), self))?.app())
 	}
 
 	/// Runs the `App` until completion

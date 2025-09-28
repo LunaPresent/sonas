@@ -52,12 +52,12 @@ where
 		}
 	}
 
-	pub fn add_component(&mut self, component_bundle: impl Bundle) -> Entity {
-		self.world.spawn(component_bundle).id()
+	pub fn add_entity(&mut self) -> Entity {
+		self.world.spawn_empty().id()
 	}
 
-	pub fn set_focus(&mut self, target: Entity) {
-		self.world.resource_mut::<Focus>().target = target;
+	pub fn add_component(&mut self, entity: Entity, component_bundle: impl Bundle) {
+		self.world.entity_mut(entity).insert(component_bundle);
 	}
 
 	pub fn init(&mut self) -> eyre::Result<()> {
