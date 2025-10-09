@@ -9,7 +9,7 @@ use color_eyre::eyre;
 
 use app_event::AppEvent;
 use cli::Cli;
-use component::{LoggerComponent, RootComponent};
+use component::{ErrorReporterComponent, RootComponent};
 use config::ConfigManager;
 
 use crate::tui::app::App;
@@ -20,7 +20,7 @@ async fn main() -> eyre::Result<()> {
 	let cli = Cli::new();
 	App::<AppEvent>::new()
 		.with_entity(|e| {
-			e.with_component(LoggerComponent::new())?
+			e.with_component(ErrorReporterComponent::new())?
 				.with_component(ConfigManager::<AppEvent>::new(cli.config_path()))?
 				.with_component(RootComponent::default())
 		})?

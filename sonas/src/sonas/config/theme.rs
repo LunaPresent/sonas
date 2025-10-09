@@ -9,6 +9,7 @@ pub struct Colours {
 	pub overlay: Color,
 	pub border_active: Color,
 	pub border_inactive: Color,
+	pub border_error: Color,
 }
 
 #[derive(Debug, Deserialize, Resource)]

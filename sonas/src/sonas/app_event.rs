@@ -9,6 +9,7 @@ pub enum AppEvent {
 	ScrollBy { direction: Direction, amount: u16 },
 	ScrollByRelative { direction: Direction, fraction: f32 },
 	ScrollTo(Rect),
+	TestError(String),
 }
 
 impl event::AppEvent for AppEvent {
