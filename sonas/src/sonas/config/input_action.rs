@@ -16,6 +16,7 @@ pub enum InputAction {
 	ScrollHalfPageUp,
 	ScrollFullPageDown,
 	ScrollFullPageUp,
+	TestError,
 }
 
 impl Action for InputAction {
@@ -52,6 +53,7 @@ impl Action for InputAction {
 				direction: Direction::Up,
 				fraction: 1.,
 			},
+			InputAction::TestError => AppEvent::TestError("test error please ignore".to_owned()),
 		}
 	}
 }

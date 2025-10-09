@@ -15,7 +15,7 @@ use bevy_ecs::{
 use notify::{Error as NotifyError, RecommendedWatcher, RecursiveMode, Watcher as _};
 use thiserror::Error;
 
-use super::{AppConfig, Keys, Theme};
+use super::{AppConfig, Keys, Settings, Theme};
 use crate::tui::{
 	ecs::{EventFlow, InitContext, UiComponent, UiSystem, UpdateContext},
 	event::Event,
@@ -79,6 +79,7 @@ where
 
 		cmd.insert_resource(config.keys);
 		cmd.insert_resource(config.theme);
+		cmd.insert_resource(config.settings);
 
 		if let Some(file_path) = comp
 			.file_path
@@ -102,6 +103,7 @@ where
 		query: Query<&Self>,
 		mut keys: ResMut<Keys>,
 		mut theme: ResMut<Theme>,
+		mut settings: ResMut<Settings>,
 	) -> Result<EventFlow, ConfigManagerError> {
 		let comp = query
 			.get(context.entity)
@@ -115,6 +117,7 @@ where
 			let config = comp.parse_config()?;
 			*keys = config.keys;
 			*theme = config.theme;
+			*settings = config.settings;
 		}
 		Ok(EventFlow::Propagate)
 	}

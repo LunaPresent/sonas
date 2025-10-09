@@ -10,12 +10,18 @@ scroll-half-page-down = "<C-d>"
 scroll-half-page-up = "<C-u>"
 scroll-full-page-down = "<C-f>"
 scroll-full-page-up = "<C-b>"
+test-error = "ge"
 # "volume set +5" = "+"
 # "volume set -5" = "-"
 # "play toggle" = "<Space>"
 
 [theme.colours]
+# based on catppuccin mocha
 background = "#1e1e2e"
 overlay = "#313244"
 border-active = "#b4befe"
 border-inactive = "#6c7086"
+border-error = "#f38ba8"
+
+[settings]
+notification-timeout = 4
