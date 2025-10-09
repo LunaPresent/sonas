@@ -18,20 +18,20 @@ impl Terminal {
 	}
 
 	pub fn enter(&mut self) -> Result<()> {
-		crossterm::terminal::enable_raw_mode()?;
-		crossterm::execute!(stdout(), EnterAlternateScreen, cursor::Hide)?;
-		crossterm::execute!(stdout(), EnableMouseCapture)?;
-		crossterm::execute!(stdout(), EnableBracketedPaste)?;
+		let hook = std::panic::take_hook();
+		std::panic::set_hook(Box::new(move |info| {
+			let _ = Self::restore();
+			hook(info);
+		}));
+
+		Self::init()?;
 		Ok(())
 	}
 
 	pub fn exit(&mut self) -> Result<()> {
 		if crossterm::terminal::is_raw_mode_enabled()? {
 			self.flush()?;
-			crossterm::execute!(stdout(), DisableBracketedPaste)?;
-			crossterm::execute!(stdout(), DisableMouseCapture)?;
-			crossterm::execute!(stdout(), LeaveAlternateScreen, cursor::Show)?;
-			crossterm::terminal::disable_raw_mode()?;
+			Self::restore()?;
 		}
 		Ok(())
 	}
@@ -45,6 +45,22 @@ impl Terminal {
 
 	pub fn resume(&mut self) -> Result<()> {
 		self.enter()?;
+		Ok(())
+	}
+
+	fn init() -> Result<()> {
+		crossterm::terminal::enable_raw_mode()?;
+		crossterm::execute!(stdout(), EnterAlternateScreen, cursor::Hide)?;
+		crossterm::execute!(stdout(), EnableMouseCapture)?;
+		crossterm::execute!(stdout(), EnableBracketedPaste)?;
+		Ok(())
+	}
+
+	fn restore() -> Result<()> {
+		crossterm::terminal::disable_raw_mode()?;
+		crossterm::execute!(stdout(), DisableBracketedPaste)?;
+		crossterm::execute!(stdout(), DisableMouseCapture)?;
+		crossterm::execute!(stdout(), LeaveAlternateScreen, cursor::Show)?;
 		Ok(())
 	}
 }
