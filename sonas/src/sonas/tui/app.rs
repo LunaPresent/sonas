@@ -2,10 +2,12 @@ mod entity_builder;
 
 pub use entity_builder::EntityBuilder;
 
-use std::io;
+use std::{io, time::Duration};
 
 use color_eyre::eyre;
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
+
+use crate::tui::event::EventDispatch;
 
 use super::{
 	ecs::ComponentSystem,
@@ -83,14 +85,16 @@ where
 		tui.enter()?;
 		self.ecs.init()?;
 		self.event_system.start()?;
+		let frame_rate = Duration::from_secs_f64(1.0 / 60.0);
+		let mut frame_interval = tokio::time::interval(frame_rate);
 		while !self.should_quit {
-			let mut next_ed = Some(self.event_system.next().await?);
-			while let Some(ed) = next_ed {
-				let result = self.ecs.handle_event(ed)?;
-				if let Some(event) = result.propagated {
-					self.handle_propagated_event(&mut tui, event)?;
+			tokio::select! {
+				ed = self.event_system.next() => {
+					self.dispatch_event(ed?)?;
 				}
-				next_ed = result.requeued;
+				_ = frame_interval.tick() => {
+					tui.try_draw(|frame| self.ecs.draw(frame).map_err(io::Error::other))?;
+				}
 			}
 			if self.should_suspend {
 				self.should_suspend = false;
@@ -107,11 +111,20 @@ where
 		Ok(())
 	}
 
-	fn handle_propagated_event(&mut self, tui: &mut Terminal, event: Event<T>) -> eyre::Result<()> {
-		match event {
-			Event::Render(_) => {
-				tui.try_draw(|frame| self.ecs.draw(frame).map_err(io::Error::other))?;
+	fn dispatch_event(&mut self, ed: EventDispatch<T>) -> eyre::Result<()> {
+		let mut next_ed = Some(ed);
+		while let Some(ed) = next_ed {
+			let result = self.ecs.handle_event(ed)?;
+			if let Some(event) = result.propagated {
+				self.handle_propagated_event(event)?;
 			}
+			next_ed = result.requeued;
+		}
+		Ok(())
+	}
+
+	fn handle_propagated_event(&mut self, event: Event<T>) -> eyre::Result<()> {
+		match event {
 			Event::Key(key_event) => {
 				self.handle_special_keys(key_event);
 			}

@@ -38,7 +38,6 @@ pub trait AppEvent {
 #[derive(Debug, Clone)]
 pub enum Event<T> {
 	Tick(Duration),
-	Render(Duration),
 	App(T),
 	FocusGained,
 	FocusLost,
