@@ -10,7 +10,6 @@ use tokio_util::sync::CancellationToken;
 use super::{Dispatch, Event, EventDispatch, EventError};
 
 const TPS: f64 = 8.0;
-const FPS: f64 = 30.0;
 
 #[derive(Debug)]
 pub struct EventSystem<T> {
@@ -77,10 +76,8 @@ where
 		cancellation_token: CancellationToken,
 	) -> Result<(), SendError<EventDispatch<T>>> {
 		let tick_rate = Duration::from_secs_f64(1.0 / TPS);
-		let frame_rate = Duration::from_secs_f64(1.0 / FPS);
 		let mut crossterm_events = crossterm::event::EventStream::new();
 		let mut tick_interval = tokio::time::interval(tick_rate);
-		let mut render_interval = tokio::time::interval(frame_rate);
 		loop {
 			tokio::select! {
 				_ = sender.closed() => {
@@ -91,12 +88,6 @@ where
 				}
 				_ = tick_interval.tick() => {
 					sender.send(EventDispatch::new(Dispatch::Broadcast, Event::Tick(tick_rate)))?;
-				}
-				_ = render_interval.tick() => {
-					sender.send(EventDispatch::new(
-						Dispatch::Broadcast,
-						Event::Render(frame_rate),
-					))?;
 				}
 				Some(Ok(evt)) = crossterm_events.next().fuse() => {
 					Self::handle_crossterm_event(&sender, evt)?;
