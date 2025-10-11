@@ -1,5 +1,6 @@
 [keys]
 quit = "q"
+suspend = "zz"
 cursor-left = ["h", "<Left>"]
 cursor-down = ["j", "<Down>"]
 cursor-up = ["k", "<Up>"]

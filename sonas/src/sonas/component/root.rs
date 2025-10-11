@@ -2,7 +2,7 @@ use bevy_ecs::{
 	change_detection::DetectChanges,
 	component::Component,
 	entity::Entity,
-	system::{Commands, Query, Res},
+	system::{Commands, Query, Res, ResMut},
 };
 use color_eyre::eyre;
 use ratatui::{
@@ -18,7 +18,7 @@ use super::{
 use crate::{
 	app_event::AppEvent,
 	config::{Keys, Theme},
-	tui::{config::KeyHandler, ecs::*},
+	tui::{config::KeyHandler, ecs::*, event::Event},
 };
 
 #[derive(Debug, Component)]
@@ -77,14 +77,25 @@ impl RootComponent {
 	fn update(
 		context: UpdateContext<AppEvent>,
 		key_config: Res<Keys>,
-		mut query: Query<&mut KeyHandler<AppEvent>>,
+		mut signal: ResMut<Signal>,
+		mut key_handler_query: Query<&mut KeyHandler<AppEvent>>,
 	) -> eyre::Result<EventFlow> {
-		let mut comp = query.get_mut(context.entity)?;
-
+		let mut key_handler = key_handler_query.get_mut(context.entity)?;
 		if key_config.is_changed() && !key_config.is_added() {
-			*comp = KeyHandler::new(key_config.generate_key_map());
+			*key_handler = KeyHandler::new(key_config.generate_key_map());
 		}
-		Ok(EventFlow::Propagate)
+
+		Ok(match context.event {
+			Event::App(AppEvent::Quit) => {
+				signal.quit()?;
+				EventFlow::Consume
+			}
+			Event::App(AppEvent::Suspend) => {
+				signal.suspend()?;
+				EventFlow::Consume
+			}
+			_ => EventFlow::Propagate,
+		})
 	}
 
 	fn render(

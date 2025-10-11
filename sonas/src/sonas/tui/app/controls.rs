@@ -1,9 +1,18 @@
-use color_eyre::eyre;
+use thiserror::Error;
 use tokio::sync::mpsc;
 
+#[derive(Debug)]
 pub(crate) enum SignalType {
 	Quit,
 	Suspend,
+}
+
+#[derive(Debug, Error)]
+pub(crate) enum AppControlsError {
+	#[error(transparent)]
+	Stop(#[from] mpsc::error::SendError<()>),
+	#[error(transparent)]
+	Signal(#[from] mpsc::error::SendError<SignalType>),
 }
 
 #[derive(Debug, Clone)]
@@ -35,13 +44,13 @@ impl AppControls {
 		)
 	}
 
-	pub fn quit(&mut self) -> eyre::Result<()> {
+	pub fn quit(&mut self) -> Result<(), AppControlsError> {
 		self.stop.send(())?;
 		self.signal.send(SignalType::Quit)?;
 		Ok(())
 	}
 
-	pub fn suspend(&mut self) -> eyre::Result<()> {
+	pub fn suspend(&mut self) -> Result<(), AppControlsError> {
 		self.stop.send(())?;
 		self.signal.send(SignalType::Suspend)?;
 		Ok(())
