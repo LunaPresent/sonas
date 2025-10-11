@@ -1,5 +1,7 @@
+mod controls;
 mod entity_builder;
 
+pub(crate) use controls::AppControls;
 pub use entity_builder::EntityBuilder;
 
 use std::{io, time::Duration};
@@ -7,13 +9,13 @@ use std::{io, time::Duration};
 use color_eyre::eyre;
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
-use crate::tui::event::EventDispatch;
-
 use super::{
 	ecs::ComponentSystem,
 	event::{AppEvent, Event, EventSystem},
 	terminal::Terminal,
 };
+use crate::tui::event::EventDispatch;
+use controls::{AppSignalReceiver, SignalType};
 
 /// Simple interface to setup and run your application
 ///
@@ -50,8 +52,8 @@ pub struct App<T>
 where
 	T: 'static,
 {
-	should_quit: bool,
-	should_suspend: bool,
+	controls: AppControls,
+	signal_receiver: AppSignalReceiver,
 	event_system: EventSystem<T>,
 	ecs: ComponentSystem<T>,
 	tick_interval: Duration,
@@ -64,11 +66,12 @@ where
 {
 	/// Creates a new `App`
 	pub fn new() -> Self {
+		let (controls, signal_receiver) = AppControls::new();
 		let event_system = EventSystem::new();
 		let ecs = ComponentSystem::new(event_system.sender());
 		Self {
-			should_quit: false,
-			should_suspend: false,
+			controls,
+			signal_receiver,
 			event_system,
 			ecs,
 			tick_interval: Duration::from_millis(100),
@@ -101,27 +104,37 @@ where
 		self.event_system.start(self.tick_interval)?;
 		let mut frame_interval = tokio::time::interval(self.frame_interval);
 		frame_interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
-		while !self.should_quit {
+		loop {
 			tokio::select! {
+				biased;
+				_ = self.signal_receiver.stop.recv() => {
+					self.event_system.stop().await?;
+				}
 				ed = self.event_system.next() => {
 					self.dispatch_event(ed?)?;
+				}
+				Some(signal) = self.signal_receiver.signal.recv() => {
+					match signal {
+						SignalType::Quit => break,
+						SignalType::Suspend => self.suspend(&mut tui).await?,
+					}
 				}
 				_ = frame_interval.tick() => {
 					tui.try_draw(|frame| self.ecs.draw(frame).map_err(io::Error::other))?;
 				}
 			}
-			if self.should_suspend {
-				self.should_suspend = false;
-				self.event_system.stop().await?;
-				tui.suspend()?;
-
-				tui.clear()?;
-				tui.resume()?;
-				self.event_system.start(self.tick_interval)?;
-			}
 		}
-		self.event_system.stop().await?;
 		tui.exit()?;
+		Ok(())
+	}
+
+	async fn suspend(&mut self, tui: &mut Terminal) -> eyre::Result<()> {
+		self.event_system.stop().await?;
+		tui.suspend()?;
+
+		tui.clear()?;
+		tui.resume()?;
+		self.event_system.start(self.tick_interval)?;
 		Ok(())
 	}
 
@@ -140,23 +153,24 @@ where
 	fn handle_propagated_event(&mut self, event: Event<T>) -> eyre::Result<()> {
 		match event {
 			Event::Key(key_event) => {
-				self.handle_special_keys(key_event);
+				self.handle_special_keys(key_event)?;
 			}
-			Event::App(app_event) if app_event.is_quit() => self.should_quit = true,
+			Event::App(app_event) if app_event.is_quit() => self.controls.quit()?,
 			_ => (),
 		}
 		Ok(())
 	}
 
-	fn handle_special_keys(&mut self, key_event: KeyEvent) {
+	fn handle_special_keys(&mut self, key_event: KeyEvent) -> eyre::Result<()> {
 		match key_event.code {
 			KeyCode::Char('c') if key_event.modifiers == KeyModifiers::CONTROL => {
-				self.should_quit = true;
+				self.controls.quit()?
 			}
 			KeyCode::Char('z') if key_event.modifiers == KeyModifiers::CONTROL => {
-				self.should_suspend = true;
+				self.controls.suspend()?
 			}
 			_ => (),
 		}
+		Ok(())
 	}
 }
