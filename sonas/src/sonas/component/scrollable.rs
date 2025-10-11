@@ -5,7 +5,7 @@ use ratatui::layout::{Rect, Size};
 use crate::{
 	app_event::AppEvent,
 	tui::{ecs::*, event::Event},
-	util::{IntoOffset as _, ResetOrigin as _},
+	util::{Direction as _, IntoOffset as _, ResetOrigin as _},
 };
 
 #[derive(Debug, Component)]

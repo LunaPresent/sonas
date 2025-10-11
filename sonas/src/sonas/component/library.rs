@@ -14,12 +14,13 @@ use ratatui::{
 
 use super::AlbumCardComponent;
 use crate::{
-	app_event::{AppEvent, Direction},
+	app_event::AppEvent,
 	config::Theme,
 	tui::{
 		ecs::*,
 		event::{Dispatch, Event},
 	},
+	util::Direction,
 };
 
 const CARD_WIDTH: u16 = 22;
@@ -139,7 +140,7 @@ impl LibraryComponent {
 		Ok(())
 	}
 
-	fn move_cursor(&mut self, direction: Direction) {
+	fn move_cursor(&mut self, direction: impl Direction) {
 		if self.album_cards.is_empty() {
 			return;
 		}

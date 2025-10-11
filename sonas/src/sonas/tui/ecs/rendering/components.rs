@@ -9,7 +9,7 @@ use super::ViewportError;
 
 // TODO: documentation
 #[derive(Debug, Component, Default, Clone, Copy, Deref, DerefMut)]
-pub struct Area(Rect);
+pub struct Area(pub Rect);
 
 /// The relative z-order of a [UI component][u]
 ///

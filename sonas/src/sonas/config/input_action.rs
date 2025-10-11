@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::{AppEvent, app_event::Direction, tui::config::Action};
+use crate::{AppEvent, tui::config::Action, util::QuadDirection};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
@@ -25,32 +25,32 @@ impl Action for InputAction {
 	fn app_event(&self) -> Self::AppEvent {
 		match *self {
 			InputAction::Quit => AppEvent::Quit,
-			InputAction::CursorUp => AppEvent::MoveCursor(Direction::Up),
-			InputAction::CursorDown => AppEvent::MoveCursor(Direction::Down),
-			InputAction::CursorLeft => AppEvent::MoveCursor(Direction::Left),
-			InputAction::CursorRight => AppEvent::MoveCursor(Direction::Right),
+			InputAction::CursorUp => AppEvent::MoveCursor(QuadDirection::Up),
+			InputAction::CursorDown => AppEvent::MoveCursor(QuadDirection::Down),
+			InputAction::CursorLeft => AppEvent::MoveCursor(QuadDirection::Left),
+			InputAction::CursorRight => AppEvent::MoveCursor(QuadDirection::Right),
 			InputAction::ScrollDown => AppEvent::ScrollBy {
-				direction: Direction::Down,
+				direction: QuadDirection::Down,
 				amount: 1,
 			},
 			InputAction::ScrollUp => AppEvent::ScrollBy {
-				direction: Direction::Up,
+				direction: QuadDirection::Up,
 				amount: 1,
 			},
 			InputAction::ScrollHalfPageDown => AppEvent::ScrollByRelative {
-				direction: Direction::Down,
+				direction: QuadDirection::Down,
 				fraction: 0.5,
 			},
 			InputAction::ScrollHalfPageUp => AppEvent::ScrollByRelative {
-				direction: Direction::Up,
+				direction: QuadDirection::Up,
 				fraction: 0.5,
 			},
 			InputAction::ScrollFullPageDown => AppEvent::ScrollByRelative {
-				direction: Direction::Down,
+				direction: QuadDirection::Down,
 				fraction: 1.,
 			},
 			InputAction::ScrollFullPageUp => AppEvent::ScrollByRelative {
-				direction: Direction::Up,
+				direction: QuadDirection::Up,
 				fraction: 1.,
 			},
 			InputAction::TestError => AppEvent::TestError("test error please ignore".to_owned()),
