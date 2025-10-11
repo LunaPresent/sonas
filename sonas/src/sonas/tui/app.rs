@@ -54,6 +54,8 @@ where
 	should_suspend: bool,
 	event_system: EventSystem<T>,
 	ecs: ComponentSystem<T>,
+	tick_interval: Duration,
+	frame_interval: Duration,
 }
 
 impl<T> App<T>
@@ -69,6 +71,8 @@ where
 			should_suspend: false,
 			event_system,
 			ecs,
+			tick_interval: Duration::from_millis(100),
+			frame_interval: Duration::from_nanos(1),
 		}
 	}
 
@@ -79,14 +83,24 @@ where
 		Ok((f)(EntityBuilder::new(self.ecs.add_entity(), self))?.app())
 	}
 
+	pub fn with_tick_interval(mut self, interval: Duration) -> Self {
+		self.tick_interval = interval.max(Duration::from_millis(1));
+		self
+	}
+
+	pub fn with_frame_interval(mut self, interval: Duration) -> Self {
+		self.frame_interval = interval.max(Duration::from_nanos(1));
+		self
+	}
+
 	/// Runs the `App` until completion
 	pub async fn run(mut self) -> eyre::Result<()> {
 		let mut tui = Terminal::new()?;
 		tui.enter()?;
 		self.ecs.init()?;
-		self.event_system.start()?;
-		let frame_rate = Duration::from_secs_f64(1.0 / 60.0);
-		let mut frame_interval = tokio::time::interval(frame_rate);
+		self.event_system.start(self.tick_interval)?;
+		let mut frame_interval = tokio::time::interval(self.frame_interval);
+		frame_interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
 		while !self.should_quit {
 			tokio::select! {
 				ed = self.event_system.next() => {
@@ -103,7 +117,7 @@ where
 
 				tui.clear()?;
 				tui.resume()?;
-				self.event_system.start()?;
+				self.event_system.start(self.tick_interval)?;
 			}
 		}
 		self.event_system.stop().await?;

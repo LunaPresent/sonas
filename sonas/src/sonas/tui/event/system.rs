@@ -9,8 +9,6 @@ use tokio_util::sync::CancellationToken;
 
 use super::{Dispatch, Event, EventDispatch, EventError};
 
-const TPS: f64 = 8.0;
-
 #[derive(Debug)]
 pub struct EventSystem<T> {
 	receiver: mpsc::UnboundedReceiver<EventDispatch<T>>,
@@ -51,14 +49,14 @@ where
 		self.sender.clone()
 	}
 
-	pub fn start(&mut self) -> Result<(), EventError<T>> {
+	pub fn start(&mut self, tick_interval: Duration) -> Result<(), EventError<T>> {
 		if self.join_handle.is_some() {
 			return Err(EventError::AlreadyRunning);
 		}
 		let sender = self.sender.clone();
 		let cancellation_token = self.cancellation_token.clone();
-		self.join_handle = Some(tokio::spawn(async {
-			Self::run(sender, cancellation_token).await
+		self.join_handle = Some(tokio::spawn(async move {
+			Self::run(tick_interval, sender, cancellation_token).await
 		}));
 		Ok(())
 	}
@@ -72,12 +70,12 @@ where
 	}
 
 	async fn run(
+		tick_interval: Duration,
 		sender: mpsc::UnboundedSender<EventDispatch<T>>,
 		cancellation_token: CancellationToken,
 	) -> Result<(), SendError<EventDispatch<T>>> {
-		let tick_rate = Duration::from_secs_f64(1.0 / TPS);
 		let mut crossterm_events = crossterm::event::EventStream::new();
-		let mut tick_interval = tokio::time::interval(tick_rate);
+		let mut tick_interval_event = tokio::time::interval(tick_interval);
 		loop {
 			tokio::select! {
 				_ = sender.closed() => {
@@ -86,8 +84,11 @@ where
 				_ = cancellation_token.cancelled() => {
 					break;
 				}
-				_ = tick_interval.tick() => {
-					sender.send(EventDispatch::new(Dispatch::Broadcast, Event::Tick(tick_rate)))?;
+				_ = tick_interval_event.tick() => {
+					sender.send(EventDispatch::new(
+						Dispatch::Broadcast,
+						Event::Tick(tick_interval),
+					))?;
 				}
 				Some(Ok(evt)) = crossterm_events.next().fuse() => {
 					Self::handle_crossterm_event(&sender, evt)?;
