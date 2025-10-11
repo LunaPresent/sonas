@@ -11,10 +11,10 @@ use color_eyre::eyre;
 
 use app_event::AppEvent;
 use cli::Cli;
-use component::{ErrorReporterComponent, RootComponent};
+use component::*;
 use config::ConfigManager;
 
-use crate::tui::app::App;
+use crate::{tui::app::App, util::OctDirection};
 
 #[tokio::main]
 async fn main() -> eyre::Result<()> {
@@ -28,6 +28,7 @@ async fn main() -> eyre::Result<()> {
 				.with_component(ConfigManager::<AppEvent>::new(cli.config_path()))?
 				.with_component(RootComponent::default())
 		})?
+		.with_entity(|e| e.with_component(FpsComponent::new(OctDirection::UpRight)))?
 		.run()
 		.await
 }
