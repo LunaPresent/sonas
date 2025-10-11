@@ -8,10 +8,11 @@ use std::{io, time::Duration};
 
 use color_eyre::eyre;
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
+use tokio::sync::mpsc::UnboundedReceiver;
 
 use super::{
 	ecs::ComponentSystem,
-	event::{AppEvent, Event, EventSystem},
+	event::{Event, EventSystem},
 	terminal::Terminal,
 };
 use crate::tui::event::EventDispatch;
@@ -62,13 +63,13 @@ where
 
 impl<T> App<T>
 where
-	T: AppEvent + Send + Sync + 'static,
+	T: Send + Sync + 'static,
 {
 	/// Creates a new `App`
 	pub fn new() -> Self {
 		let (controls, signal_receiver) = AppControls::new();
 		let event_system = EventSystem::new();
-		let ecs = ComponentSystem::new(event_system.sender());
+		let ecs = ComponentSystem::new(controls.clone(), event_system.sender());
 		Self {
 			controls,
 			signal_receiver,
@@ -107,7 +108,10 @@ where
 		loop {
 			tokio::select! {
 				biased;
-				_ = self.signal_receiver.stop.recv() => {
+				Some(_) = Self::recv_stop(
+					self.event_system.is_running(),
+					&mut self.signal_receiver.stop,
+				) => {
 					self.event_system.stop().await?;
 				}
 				ed = self.event_system.next() => {
@@ -128,8 +132,15 @@ where
 		Ok(())
 	}
 
+	async fn recv_stop(is_running: bool, stop_receiver: &mut UnboundedReceiver<()>) -> Option<()> {
+		if is_running {
+			stop_receiver.recv().await
+		} else {
+			None
+		}
+	}
+
 	async fn suspend(&mut self, tui: &mut Terminal) -> eyre::Result<()> {
-		self.event_system.stop().await?;
 		tui.suspend()?;
 
 		tui.clear()?;
@@ -152,23 +163,16 @@ where
 
 	fn handle_propagated_event(&mut self, event: Event<T>) -> eyre::Result<()> {
 		match event {
-			Event::Key(key_event) => {
-				self.handle_special_keys(key_event)?;
-			}
-			Event::App(app_event) if app_event.is_quit() => self.controls.quit()?,
-			_ => (),
-		}
-		Ok(())
-	}
-
-	fn handle_special_keys(&mut self, key_event: KeyEvent) -> eyre::Result<()> {
-		match key_event.code {
-			KeyCode::Char('c') if key_event.modifiers == KeyModifiers::CONTROL => {
-				self.controls.quit()?
-			}
-			KeyCode::Char('z') if key_event.modifiers == KeyModifiers::CONTROL => {
-				self.controls.suspend()?
-			}
+			Event::Key(KeyEvent {
+				code: KeyCode::Char('c'),
+				modifiers: KeyModifiers::CONTROL,
+				..
+			}) => self.controls.quit()?,
+			Event::Key(KeyEvent {
+				code: KeyCode::Char('z'),
+				modifiers: KeyModifiers::CONTROL,
+				..
+			}) => self.controls.suspend()?,
 			_ => (),
 		}
 		Ok(())

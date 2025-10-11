@@ -69,6 +69,10 @@ where
 		Ok(())
 	}
 
+	pub fn is_running(&self) -> bool {
+		self.join_handle.is_some()
+	}
+
 	async fn run(
 		tick_interval: Duration,
 		sender: mpsc::UnboundedSender<EventDispatch<T>>,

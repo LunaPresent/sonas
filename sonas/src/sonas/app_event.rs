@@ -1,10 +1,11 @@
 use ratatui::layout::Rect;
 
-use crate::{tui::event, util::QuadDirection};
+use crate::util::QuadDirection;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum AppEvent {
 	Quit,
+	Suspend,
 	MoveCursor(QuadDirection),
 	ScrollBy {
 		direction: QuadDirection,
@@ -16,10 +17,4 @@ pub enum AppEvent {
 	},
 	ScrollTo(Rect),
 	TestError(String),
-}
-
-impl event::AppEvent for AppEvent {
-	fn is_quit(&self) -> bool {
-		self == &Self::Quit
-	}
 }

@@ -6,6 +6,7 @@ use crate::{AppEvent, tui::config::Action, util::QuadDirection};
 #[serde(rename_all = "kebab-case")]
 pub enum InputAction {
 	Quit,
+	Suspend,
 	CursorUp,
 	CursorDown,
 	CursorLeft,
@@ -25,6 +26,7 @@ impl Action for InputAction {
 	fn app_event(&self) -> Self::AppEvent {
 		match *self {
 			InputAction::Quit => AppEvent::Quit,
+			InputAction::Suspend => AppEvent::Suspend,
 			InputAction::CursorUp => AppEvent::MoveCursor(QuadDirection::Up),
 			InputAction::CursorDown => AppEvent::MoveCursor(QuadDirection::Down),
 			InputAction::CursorLeft => AppEvent::MoveCursor(QuadDirection::Left),

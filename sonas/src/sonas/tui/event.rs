@@ -30,10 +30,6 @@ pub enum Dispatch {
 	Target(Entity),
 }
 
-pub trait AppEvent {
-	fn is_quit(&self) -> bool;
-}
-
 #[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub enum Event<T> {

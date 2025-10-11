@@ -4,12 +4,14 @@ mod event_handling;
 mod init;
 mod into_result;
 mod rendering;
+mod signal;
 mod ui_component;
 
 pub use entity_commands_ext::EntityCommandsExt;
 pub use error_handling::ErrorFlow;
 pub use event_handling::{AsyncEventQueue, CursorPos, EventFlow, EventQueue, Focus};
 pub use rendering::{Area, Viewport, ZOrder};
+pub use signal::Signal;
 pub use ui_component::{
 	ErrorContext, InitContext, RenderContext, UiComponent, UiSystem, UpdateContext,
 };
@@ -19,7 +21,10 @@ use color_eyre::eyre;
 use ratatui::Frame;
 use tokio::sync::mpsc;
 
-use super::event::{Dispatch, Event, EventDispatch};
+use super::{
+	app::AppControls,
+	event::{Dispatch, Event, EventDispatch},
+};
 use event_handling::UpdateSystemRunner;
 use init::init_components;
 use rendering::RenderSystemRunner;
@@ -38,8 +43,12 @@ impl<T> ComponentSystem<T>
 where
 	T: Send + Sync + 'static,
 {
-	pub fn new(event_sender: mpsc::UnboundedSender<EventDispatch<T>>) -> Self {
+	pub fn new(
+		controls: AppControls,
+		event_sender: mpsc::UnboundedSender<EventDispatch<T>>,
+	) -> Self {
 		let mut world = World::new();
+		world.insert_resource(Signal::new(controls));
 		world.insert_resource(Focus::default());
 		world.insert_resource(CursorPos::default());
 		world.insert_resource(EventQueue::<T>::default());
