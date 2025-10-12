@@ -63,7 +63,7 @@ impl<T> UiSystemResultInternalExt for Result<T, UiSystemError> {
 
 #[derive(Debug)]
 pub(crate) struct UiSystemError {
-	pub(super) error_system_runner: Box<dyn RunErrorSystems>,
+	pub error_system_runner: Box<dyn RunErrorSystems>,
 }
 
 impl UiSystemError {
