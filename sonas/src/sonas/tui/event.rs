@@ -7,34 +7,36 @@ pub use system::EventSystem;
 use std::time::Duration;
 
 use bevy_ecs::entity::Entity;
-use crossterm::event::{KeyEvent, MouseEvent};
+use crossterm::event::{KeyEvent, MouseEvent, MouseEventKind};
 
-#[derive(Debug, Clone)]
-pub struct EventDispatch<T> {
-	pub dispatch: Dispatch,
-	pub event: Event<T>,
+#[derive(Debug)]
+pub(crate) struct EventDispatch<T> {
+	pub dispatch: DispatchMethod,
+	pub event: T,
 }
 
 impl<T> EventDispatch<T> {
-	pub fn new(dispatch: Dispatch, event: Event<T>) -> Self {
+	pub fn new(dispatch: DispatchMethod, event: T) -> Self {
 		Self { dispatch, event }
 	}
 }
 
-#[allow(dead_code)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Dispatch {
+pub enum DispatchMethod {
 	Input,
 	Broadcast,
-	Cursor { x: u16, y: u16 },
+	Cursor {
+		x: u16,
+		y: u16,
+		kind: MouseEventKind,
+	},
 	Target(Entity),
 }
 
 #[allow(dead_code)]
 #[derive(Debug, Clone)]
-pub enum Event<T> {
+pub enum SystemEvent {
 	Tick(Duration),
-	App(T),
 	FocusGained,
 	FocusLost,
 	Key(KeyEvent),

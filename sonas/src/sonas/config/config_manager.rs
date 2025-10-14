@@ -1,30 +1,30 @@
-use std::{
-	marker::PhantomData,
-	path::PathBuf,
-	sync::{
-		Arc,
-		atomic::{AtomicBool, Ordering},
-	},
-};
+use std::path::PathBuf;
 
 use ::config::{Config, ConfigError, File, FileFormat};
 use bevy_ecs::{
 	component::Component,
-	system::{Commands, Query, ResMut},
+	system::{Commands, Query, Res, ResMut},
 };
-use notify::{Error as NotifyError, RecommendedWatcher, RecursiveMode, Watcher as _};
+use clap::error::Result;
+use notify::{RecommendedWatcher, RecursiveMode, Watcher as _};
 use thiserror::Error;
 
 use super::{AppConfig, Keys, Settings, Theme};
-use crate::tui::{
-	ecs::{EventFlow, InitContext, UiComponent, UiSystem, UpdateContext},
-	event::Event,
+use crate::{
+	app_event::AppEvent,
+	tui::{
+		ecs::{
+			AsyncEventQueue, EventContext, EventFlow, EventQueue, InitContext, UiComponent,
+			UiSystem,
+		},
+		event::DispatchMethod,
+	},
 };
 
 #[derive(Debug, Error)]
 pub enum ConfigManagerError {
-	#[error("failed to initialise file watch on config file")]
-	FailedFileWatch(#[from] NotifyError),
+	#[error("error in file watch on config file")]
+	FailedFileWatch(#[from] notify::Error),
 	#[error("failed to parse config file")]
 	FailedToParse(#[from] ConfigError),
 	#[error("failed to convert config file path to string")]
@@ -34,40 +34,28 @@ pub enum ConfigManagerError {
 #[derive(Debug, Component)]
 #[component(on_add = Self::register_systems)]
 #[component(on_remove = Self::unregister_systems)]
-pub struct ConfigManager<T>
-where
-	T: Send + Sync + 'static,
-{
+pub struct ConfigManager {
 	file_path: Option<PathBuf>,
 	watcher: Option<RecommendedWatcher>,
-	changed: Arc<AtomicBool>,
-	phantom_data: PhantomData<T>,
 }
 
-impl<T> UiComponent for ConfigManager<T>
-where
-	T: Send + Sync + 'static,
-{
+impl UiComponent for ConfigManager {
 	fn systems() -> impl IntoIterator<Item = UiSystem> {
 		[UiSystem::new(Self::init), UiSystem::new(Self::update)]
 	}
 }
 
-impl<T> ConfigManager<T>
-where
-	T: Send + Sync + 'static,
-{
+impl ConfigManager {
 	pub fn new(file_path: Option<PathBuf>) -> Self {
 		Self {
 			file_path,
 			watcher: None,
-			changed: Arc::new(AtomicBool::new(false)),
-			phantom_data: PhantomData,
 		}
 	}
 
 	fn init(
 		context: InitContext,
+		async_events: Res<AsyncEventQueue>,
 		mut query: Query<&mut Self>,
 		mut cmd: Commands,
 	) -> Result<(), ConfigManagerError> {
@@ -87,9 +75,11 @@ where
 			.and_then(|p| p.parent())
 			.filter(|p| p.exists())
 		{
-			let changed = comp.changed.clone();
-			let mut watcher = notify::recommended_watcher(move |_event| {
-				changed.store(true, Ordering::Relaxed);
+			let mut async_events = async_events.clone();
+			let mut watcher = notify::recommended_watcher(move |event| {
+				if let Ok(event) = event {
+					async_events.send(DispatchMethod::Target(context.entity), event);
+				}
 			})?;
 			watcher.watch(file_path, RecursiveMode::Recursive)?;
 			comp.watcher = Some(watcher);
@@ -99,27 +89,30 @@ where
 	}
 
 	fn update(
-		context: UpdateContext<T>,
+		context: EventContext<notify::Event>,
 		query: Query<&Self>,
 		mut keys: ResMut<Keys>,
 		mut theme: ResMut<Theme>,
 		mut settings: ResMut<Settings>,
+		mut event_queue: ResMut<EventQueue>,
 	) -> Result<EventFlow, ConfigManagerError> {
 		let comp = query
 			.get(context.entity)
 			.expect("Self type component should be present on the entity");
-		if let Event::Tick(_) = context.event
-			&& comp
-				.changed
-				.compare_exchange(true, false, Ordering::Relaxed, Ordering::Relaxed)
-				.is_ok()
-		{
-			let config = comp.parse_config()?;
-			*keys = config.keys;
-			*theme = config.theme;
-			*settings = config.settings;
+
+		match context.event.kind {
+			notify::EventKind::Create(_)
+			| notify::EventKind::Modify(_)
+			| notify::EventKind::Remove(_) => {
+				let config = comp.parse_config()?;
+				*keys = config.keys;
+				*theme = config.theme;
+				*settings = config.settings;
+				event_queue.send(DispatchMethod::Broadcast, AppEvent::UpdateKeymap);
+				Ok(EventFlow::Consume)
+			}
+			_ => Ok(EventFlow::Propagate),
 		}
-		Ok(EventFlow::Propagate)
 	}
 
 	fn parse_config(&self) -> Result<AppConfig, ConfigManagerError> {
@@ -147,11 +140,9 @@ where
 mod tests {
 	use super::*;
 
-	struct AppEvent;
-
 	#[test]
 	fn default_config_ok() {
-		let config_manager = ConfigManager::<AppEvent>::new(None);
+		let config_manager = ConfigManager::new(None);
 		assert!(config_manager.parse_config().is_ok());
 	}
 }

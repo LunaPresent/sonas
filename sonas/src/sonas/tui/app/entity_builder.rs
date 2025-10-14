@@ -4,20 +4,14 @@ use color_eyre::eyre;
 use super::App;
 
 #[derive(Debug)]
-pub struct EntityBuilder<T>
-where
-	T: 'static,
-{
+pub struct EntityBuilder {
 	entity: Entity,
-	app: App<T>,
+	app: App,
 }
 
 #[allow(dead_code)]
-impl<T> EntityBuilder<T>
-where
-	T: Send + Sync + 'static,
-{
-	pub fn new(entity: Entity, app: App<T>) -> Self {
+impl EntityBuilder {
+	pub fn new(entity: Entity, app: App) -> Self {
 		Self { entity, app }
 	}
 
@@ -25,7 +19,7 @@ where
 		self.entity
 	}
 
-	pub fn app(self) -> App<T> {
+	pub fn app(self) -> App {
 		self.app
 	}
 

@@ -4,7 +4,7 @@ use ratatui::layout::{Rect, Size};
 
 use crate::{
 	app_event::AppEvent,
-	tui::{ecs::*, event::Event},
+	tui::ecs::*,
 	util::{Direction as _, IntoOffset as _, ResetOrigin as _},
 };
 
@@ -38,12 +38,12 @@ where
 	}
 
 	fn update(
-		context: UpdateContext<AppEvent>,
+		context: EventContext<AppEvent>,
 		mut query: Query<(&mut Viewport, &Area)>,
 	) -> eyre::Result<EventFlow> {
 		let (mut viewport, area) = query.get_mut(context.entity)?;
 		Ok(match context.event {
-			Event::App(AppEvent::ScrollBy { direction, amount }) => {
+			AppEvent::ScrollBy { direction, amount } => {
 				Self::scroll(
 					viewport.as_mut(),
 					direction.x() * amount.cast_signed(),
@@ -52,10 +52,10 @@ where
 				viewport.clamp_offset(area.as_size())?;
 				EventFlow::Consume
 			}
-			Event::App(AppEvent::ScrollByRelative {
+			AppEvent::ScrollByRelative {
 				direction,
 				fraction,
-			}) => {
+			} => {
 				let size = area.as_size();
 				Self::scroll(
 					viewport.as_mut(),
@@ -65,7 +65,7 @@ where
 				viewport.clamp_offset(size)?;
 				EventFlow::Consume
 			}
-			Event::App(AppEvent::ScrollTo(rect)) => {
+			AppEvent::ScrollTo(rect) => {
 				let area = area.reset_origin().offset(viewport.offset.into_offset());
 				viewport.offset.x -= area.left().saturating_sub(rect.left());
 				viewport.offset.x += rect.right().saturating_sub(area.right());

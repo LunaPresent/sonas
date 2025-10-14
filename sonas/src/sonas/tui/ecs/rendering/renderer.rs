@@ -25,12 +25,12 @@ struct EntityRenderInfo {
 }
 
 #[derive(Debug)]
-pub(crate) struct RenderSystemRunner {
+pub(crate) struct Renderer {
 	queues_per_viewport: Vec<Vec<EntityRenderInfo>>,
 	viewport_count: usize,
 }
 
-impl Default for RenderSystemRunner {
+impl Default for Renderer {
 	fn default() -> Self {
 		Self {
 			queues_per_viewport: vec![Vec::new()],
@@ -39,7 +39,7 @@ impl Default for RenderSystemRunner {
 	}
 }
 
-impl RenderSystemRunner {
+impl Renderer {
 	pub fn render(&mut self, buf: &mut Buffer, area: Rect, world: &mut World) -> eyre::Result<()> {
 		for queue in &mut self.queues_per_viewport {
 			queue.clear();
@@ -69,7 +69,7 @@ impl RenderSystemRunner {
 
 	#[allow(clippy::type_complexity, reason = "query is injected by bevy")]
 	fn find_render_targets(
-		InMut(this): InMut<RenderSystemRunner>,
+		InMut(this): InMut<Renderer>,
 		root_entities: Query<Entity, Without<ChildOf>>,
 		query: Query<(
 			Option<&RenderSystemCollection>,

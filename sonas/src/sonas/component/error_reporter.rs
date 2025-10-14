@@ -9,11 +9,7 @@ use color_eyre::eyre;
 use ratatui::layout::{Constraint, Flex, Layout};
 
 use super::ErrorPopupComponent;
-use crate::{
-	app_event::AppEvent,
-	config::Settings,
-	tui::{ecs::*, event::Event},
-};
+use crate::{app_event::AppEvent, config::Settings, tui::ecs::*};
 
 #[derive(Debug, Component, Default)]
 #[component(on_add = Self::register_systems)]
@@ -37,8 +33,8 @@ impl ErrorReporterComponent {
 		Self::default()
 	}
 
-	fn update(context: UpdateContext<AppEvent>) -> eyre::Result<EventFlow> {
-		if let Event::App(AppEvent::TestError(s)) = context.event {
+	fn update(context: EventContext<AppEvent>) -> eyre::Result<EventFlow> {
+		if let AppEvent::TestError(s) = context.event {
 			Err(eyre::eyre!(s.clone()))
 		} else {
 			Ok(EventFlow::Propagate)

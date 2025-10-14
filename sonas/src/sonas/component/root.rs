@@ -1,5 +1,4 @@
 use bevy_ecs::{
-	change_detection::DetectChanges,
 	component::Component,
 	entity::Entity,
 	system::{Commands, Query, Res, ResMut},
@@ -18,7 +17,7 @@ use super::{
 use crate::{
 	app_event::AppEvent,
 	config::{Keys, Theme},
-	tui::{config::KeyHandler, ecs::*, event::Event},
+	tui::{config::KeyHandler, ecs::*},
 };
 
 #[derive(Debug, Component)]
@@ -75,24 +74,24 @@ impl RootComponent {
 	}
 
 	fn update(
-		context: UpdateContext<AppEvent>,
+		context: EventContext<AppEvent>,
 		key_config: Res<Keys>,
 		mut signal: ResMut<Signal>,
 		mut key_handler_query: Query<&mut KeyHandler<AppEvent>>,
 	) -> eyre::Result<EventFlow> {
-		let mut key_handler = key_handler_query.get_mut(context.entity)?;
-		if key_config.is_changed() && !key_config.is_added() {
-			*key_handler = KeyHandler::new(key_config.generate_key_map());
-		}
-
 		Ok(match context.event {
-			Event::App(AppEvent::Quit) => {
+			AppEvent::Quit => {
 				signal.quit()?;
 				EventFlow::Consume
 			}
-			Event::App(AppEvent::Suspend) => {
+			AppEvent::Suspend => {
 				signal.suspend()?;
 				EventFlow::Consume
+			}
+			AppEvent::UpdateKeymap => {
+				let mut key_handler = key_handler_query.get_mut(context.entity)?;
+				*key_handler = KeyHandler::new(key_config.generate_key_map());
+				EventFlow::Propagate
 			}
 			_ => EventFlow::Propagate,
 		})

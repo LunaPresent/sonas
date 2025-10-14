@@ -2,26 +2,20 @@ use std::collections::VecDeque;
 
 use bevy_ecs::resource::Resource;
 
-use crate::tui::event::{Dispatch, Event, EventDispatch};
+use crate::tui::{ecs::DynEventDispatch, event::DispatchMethod};
 
-#[derive(Debug, Resource)]
-pub struct EventQueue<T>(VecDeque<EventDispatch<T>>);
+#[derive(Resource, Default)]
+pub struct EventQueue(VecDeque<DynEventDispatch>);
 
-impl<T> Default for EventQueue<T> {
-	fn default() -> Self {
-		Self(VecDeque::default())
-	}
-}
-
-impl<T> EventQueue<T> {
-	pub fn push(&mut self, dispatch: Dispatch, app_event: T) {
-		self.0.push_back(EventDispatch {
-			dispatch,
-			event: Event::App(app_event),
-		});
+impl EventQueue {
+	pub fn send<T>(&mut self, dispatch: DispatchMethod, event: T)
+	where
+		T: Send + Sync + 'static,
+	{
+		self.0.push_back(DynEventDispatch::new(dispatch, event));
 	}
 
-	pub(crate) fn pop(&mut self) -> Option<EventDispatch<T>> {
+	pub(crate) fn next(&mut self) -> Option<DynEventDispatch> {
 		self.0.pop_front()
 	}
 }

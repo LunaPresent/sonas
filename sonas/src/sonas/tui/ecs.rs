@@ -9,11 +9,12 @@ mod ui_component;
 
 pub use entity_commands_ext::EntityCommandsExt;
 pub use error_handling::ErrorFlow;
+pub(crate) use event_handling::DynEventDispatch;
 pub use event_handling::{AsyncEventQueue, CursorPos, EventFlow, EventQueue, Focus};
 pub use rendering::{Area, Viewport, ZOrder};
 pub use signal::Signal;
 pub use ui_component::{
-	ErrorContext, InitContext, RenderContext, UiComponent, UiSystem, UpdateContext,
+	ErrorContext, EventContext, InitContext, RenderContext, UiComponent, UiSystem,
 };
 
 use bevy_ecs::{bundle::Bundle, entity::Entity, world::World};
@@ -23,41 +24,35 @@ use tokio::sync::mpsc;
 
 use super::{
 	app::AppControls,
-	event::{Dispatch, Event, EventDispatch},
+	event::{DispatchMethod, EventDispatch, SystemEvent},
 };
-use event_handling::UpdateSystemRunner;
+use event_handling::EventDispatcher;
 use init::init_components;
-use rendering::RenderSystemRunner;
+use rendering::Renderer;
 
 #[derive(Debug)]
-pub(crate) struct ComponentSystem<T>
-where
-	T: 'static,
-{
+pub(crate) struct ComponentSystem {
 	world: World,
-	update_context: UpdateSystemRunner<T>,
-	render_context: RenderSystemRunner,
+	event_dispatcher: EventDispatcher,
+	renderer: Renderer,
 }
 
-impl<T> ComponentSystem<T>
-where
-	T: Send + Sync + 'static,
-{
+impl ComponentSystem {
 	pub fn new(
 		controls: AppControls,
-		event_sender: mpsc::UnboundedSender<EventDispatch<T>>,
+		event_sender: mpsc::UnboundedSender<DynEventDispatch>,
 	) -> Self {
 		let mut world = World::new();
 		world.insert_resource(Signal::new(controls));
 		world.insert_resource(Focus::default());
 		world.insert_resource(CursorPos::default());
-		world.insert_resource(EventQueue::<T>::default());
-		world.insert_resource(AsyncEventQueue::<T>::new(event_sender));
+		world.insert_resource(EventQueue::default());
+		world.insert_resource(AsyncEventQueue::new(event_sender));
 
 		ComponentSystem {
 			world,
-			update_context: Default::default(),
-			render_context: Default::default(),
+			event_dispatcher: EventDispatcher::default(),
+			renderer: Default::default(),
 		}
 	}
 
@@ -75,29 +70,42 @@ where
 		Ok(())
 	}
 
-	pub fn handle_event(&mut self, ed: EventDispatch<T>) -> eyre::Result<HandleEventResult<T>> {
-		let event = self.update_context.handle_event(ed, &mut self.world)?;
+	pub fn dispatch_system_event(
+		&mut self,
+		ed: EventDispatch<SystemEvent>,
+	) -> eyre::Result<Option<SystemEvent>> {
+		let event = self.event_dispatcher.dispatch(ed, &mut self.world)?;
 		self.world.run_system_cached(init_components)?;
 
-		let requeued = self
+		while let Some(ed) = self
 			.world
-			.get_resource_mut::<EventQueue<T>>()
-			.and_then(|mut queue| queue.pop());
+			.get_resource_mut::<EventQueue>()
+			.and_then(|mut queue| queue.next())
+		{
+			self.event_dispatcher.dispatch_dyn(ed, &mut self.world)?;
+		}
 
-		Ok(HandleEventResult {
-			propagated: event,
-			requeued,
-		})
+		Ok(event)
+	}
+
+	pub fn dispatch_dyn_event(&mut self, ed: DynEventDispatch) -> eyre::Result<()> {
+		self.event_dispatcher.dispatch_dyn(ed, &mut self.world)?;
+		self.world.run_system_cached(init_components)?;
+
+		while let Some(ed) = self
+			.world
+			.get_resource_mut::<EventQueue>()
+			.and_then(|mut queue| queue.next())
+		{
+			self.event_dispatcher.dispatch_dyn(ed, &mut self.world)?;
+		}
+
+		Ok(())
 	}
 
 	pub fn draw(&mut self, frame: &mut Frame) -> eyre::Result<()> {
 		let area = frame.area();
-		self.render_context
+		self.renderer
 			.render(frame.buffer_mut(), area, &mut self.world)
 	}
-}
-
-pub(crate) struct HandleEventResult<T> {
-	pub propagated: Option<Event<T>>,
-	pub requeued: Option<EventDispatch<T>>,
 }

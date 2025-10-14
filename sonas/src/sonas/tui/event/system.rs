@@ -7,20 +7,19 @@ use tokio::{
 };
 use tokio_util::sync::CancellationToken;
 
-use super::{Dispatch, Event, EventDispatch, EventError};
+use crate::tui::event::SystemEvent;
+
+use super::{DispatchMethod, EventDispatch, EventError};
 
 #[derive(Debug)]
-pub struct EventSystem<T> {
-	receiver: mpsc::UnboundedReceiver<EventDispatch<T>>,
-	sender: mpsc::UnboundedSender<EventDispatch<T>>,
+pub struct EventSystem {
+	receiver: mpsc::UnboundedReceiver<EventDispatch<SystemEvent>>,
+	sender: mpsc::UnboundedSender<EventDispatch<SystemEvent>>,
 	cancellation_token: CancellationToken,
-	join_handle: Option<JoinHandle<Result<(), SendError<EventDispatch<T>>>>>,
+	join_handle: Option<JoinHandle<Result<(), SendError<EventDispatch<SystemEvent>>>>>,
 }
 
-impl<T> EventSystem<T>
-where
-	T: Send + 'static,
-{
+impl EventSystem {
 	/// Creates a new `EventSystem`
 	pub fn new() -> Self {
 		let (sender, receiver) = mpsc::unbounded_channel();
@@ -41,15 +40,11 @@ where
 	/// This function returns an error if the sender channel is disconnected. This can happen if an
 	/// error occurs in the event thread. In practice, this should not happen unless there is a
 	/// problem with the underlying terminal.
-	pub async fn next(&mut self) -> Result<EventDispatch<T>, EventError<T>> {
+	pub async fn next(&mut self) -> Result<EventDispatch<SystemEvent>, EventError> {
 		self.receiver.recv().await.ok_or(EventError::Disconnected)
 	}
 
-	pub fn sender(&self) -> mpsc::UnboundedSender<EventDispatch<T>> {
-		self.sender.clone()
-	}
-
-	pub fn start(&mut self, tick_interval: Duration) -> Result<(), EventError<T>> {
+	pub fn start(&mut self, tick_interval: Duration) -> Result<(), EventError> {
 		if self.join_handle.is_some() {
 			return Err(EventError::AlreadyRunning);
 		}
@@ -61,7 +56,7 @@ where
 		Ok(())
 	}
 
-	pub async fn stop(&mut self) -> Result<(), EventError<T>> {
+	pub async fn stop(&mut self) -> Result<(), EventError> {
 		let join_handle = self.join_handle.take().ok_or(EventError::AlreadyStopped)?;
 		self.cancellation_token.cancel();
 		join_handle.await??;
@@ -75,9 +70,9 @@ where
 
 	async fn run(
 		tick_interval: Duration,
-		sender: mpsc::UnboundedSender<EventDispatch<T>>,
+		sender: mpsc::UnboundedSender<EventDispatch<SystemEvent>>,
 		cancellation_token: CancellationToken,
-	) -> Result<(), SendError<EventDispatch<T>>> {
+	) -> Result<(), SendError<EventDispatch<SystemEvent>>> {
 		let mut crossterm_events = crossterm::event::EventStream::new();
 		let mut tick_interval_event = tokio::time::interval(tick_interval);
 		loop {
@@ -90,8 +85,8 @@ where
 				}
 				_ = tick_interval_event.tick() => {
 					sender.send(EventDispatch::new(
-						Dispatch::Broadcast,
-						Event::Tick(tick_interval),
+						DispatchMethod::Broadcast,
+						SystemEvent::Tick(tick_interval),
 					))?;
 				}
 				Some(Ok(evt)) = crossterm_events.next().fuse() => {
@@ -103,32 +98,37 @@ where
 	}
 
 	fn handle_crossterm_event(
-		sender: &mpsc::UnboundedSender<EventDispatch<T>>,
+		sender: &mpsc::UnboundedSender<EventDispatch<SystemEvent>>,
 		evt: CrosstermEvent,
-	) -> Result<(), SendError<EventDispatch<T>>> {
+	) -> Result<(), SendError<EventDispatch<SystemEvent>>> {
 		match evt {
-			CrosstermEvent::FocusGained => {
-				sender.send(EventDispatch::new(Dispatch::Broadcast, Event::FocusGained))
-			}
-			CrosstermEvent::FocusLost => {
-				sender.send(EventDispatch::new(Dispatch::Broadcast, Event::FocusLost))
-			}
-			CrosstermEvent::Key(key_event) => {
-				sender.send(EventDispatch::new(Dispatch::Input, Event::Key(key_event)))
-			}
+			CrosstermEvent::FocusGained => sender.send(EventDispatch::new(
+				DispatchMethod::Broadcast,
+				SystemEvent::FocusGained,
+			)),
+			CrosstermEvent::FocusLost => sender.send(EventDispatch::new(
+				DispatchMethod::Broadcast,
+				SystemEvent::FocusLost,
+			)),
+			CrosstermEvent::Key(key_event) => sender.send(EventDispatch::new(
+				DispatchMethod::Input,
+				SystemEvent::Key(key_event),
+			)),
 			CrosstermEvent::Mouse(mouse_event) => sender.send(EventDispatch::new(
-				Dispatch::Cursor {
+				DispatchMethod::Cursor {
 					x: mouse_event.column,
 					y: mouse_event.row,
+					kind: mouse_event.kind,
 				},
-				Event::Mouse(mouse_event),
+				SystemEvent::Mouse(mouse_event),
 			)),
-			CrosstermEvent::Paste(s) => {
-				sender.send(EventDispatch::new(Dispatch::Input, Event::Paste(s)))
-			}
+			CrosstermEvent::Paste(s) => sender.send(EventDispatch::new(
+				DispatchMethod::Input,
+				SystemEvent::Paste(s),
+			)),
 			CrosstermEvent::Resize(width, height) => sender.send(EventDispatch::new(
-				Dispatch::Broadcast,
-				Event::Resize { width, height },
+				DispatchMethod::Broadcast,
+				SystemEvent::Resize { width, height },
 			)),
 		}
 	}
