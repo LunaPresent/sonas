@@ -7,8 +7,8 @@ use bevy_ecs::{
 
 use super::{KeyChord, KeyMap, KeyMapMatch};
 use crate::tui::{
-	ecs::{EventFlow, EventQueue, UiComponent, UiSystem, UpdateContext},
-	event::{Dispatch, Event},
+	ecs::{EventContext, EventFlow, EventQueue, UiComponent, UiSystem},
+	event::{DispatchMethod, SystemEvent},
 };
 
 #[derive(Debug, Component)]
@@ -47,8 +47,8 @@ where
 	}
 
 	fn update(
-		context: UpdateContext<T>,
-		mut event_queue: ResMut<EventQueue<T>>,
+		context: EventContext<SystemEvent>,
+		mut event_queue: ResMut<EventQueue>,
 		mut query: Query<&mut Self>,
 	) -> EventFlow {
 		let mut comp = query
@@ -56,21 +56,21 @@ where
 			.expect("Self type component should be present on the entity");
 
 		match context.event {
-			Event::Tick(delta) => {
+			SystemEvent::Tick(delta) => {
 				if !comp.key_map_match.matches(&comp.key_map).is_empty() {
 					comp.timeout += *delta;
 				}
 				if comp.timeout > comp.timeoutlen {
 					let matches = comp.key_map_match.full_matches(&comp.key_map);
 					for app_event in matches.iter().map(|m| m.app_event.clone()) {
-						event_queue.push(Dispatch::Input, app_event);
+						event_queue.send(DispatchMethod::Input, app_event);
 					}
 					comp.key_map_match = KeyMapMatch::new();
 					comp.timeout = Duration::ZERO;
 				}
 				EventFlow::Propagate
 			}
-			Event::Key(key_event) => {
+			SystemEvent::Key(key_event) => {
 				comp.timeout = Duration::ZERO;
 				let key_chord = KeyChord::from_event(*key_event);
 				comp.key_map_match = comp.key_map.match_key(key_chord, comp.key_map_match);
@@ -81,7 +81,7 @@ where
 				} else if comp.key_map_match.partial_matches(&comp.key_map).is_empty() {
 					let matches = comp.key_map_match.full_matches(&comp.key_map);
 					for app_event in matches.iter().map(|m| m.app_event.clone()) {
-						event_queue.push(Dispatch::Input, app_event);
+						event_queue.send(DispatchMethod::Input, app_event);
 					}
 					comp.key_map_match = KeyMapMatch::new();
 					EventFlow::Consume

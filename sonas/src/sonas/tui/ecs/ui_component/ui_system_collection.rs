@@ -3,14 +3,14 @@ use std::ops;
 use bevy_ecs::{component::Component, system::SystemId};
 use smallvec::SmallVec;
 
-use super::{ErrorContext, InitContext, RenderContext, UiSystemContext, UpdateContext};
+use super::{ErrorContext, EventContext, InitContext, RenderContext, UiSystemContext};
 use crate::tui::ecs::{Area, error_handling::UiSystemError};
 
 const N: usize = 3;
 
 type UiSystemId<C> = SystemId<C, Result<<C as UiSystemContext>::Result, UiSystemError>>;
 pub(crate) type InitSystemId = UiSystemId<InitContext>;
-pub(crate) type UpdateSystemId<T> = UiSystemId<UpdateContext<'static, T>>;
+pub(crate) type EventSystemId<T> = UiSystemId<EventContext<'static, T>>;
 pub(crate) type RenderSystemId = UiSystemId<RenderContext<'static>>;
 pub(crate) type ErrorSystemId<E> = UiSystemId<ErrorContext<'static, E>>;
 
@@ -31,19 +31,19 @@ impl UiSystemCollection for InitSystemCollection {
 }
 
 #[derive(Debug, Component, Clone, derive_more::Deref, derive_more::DerefMut)]
-pub(crate) struct UpdateSystemCollection<T>(SmallVec<[UpdateSystemId<T>; N]>)
+pub(crate) struct EventSystemCollection<T>(SmallVec<[EventSystemId<T>; N]>)
 where
 	T: 'static;
 
-impl<T> Default for UpdateSystemCollection<T> {
+impl<T> Default for EventSystemCollection<T> {
 	fn default() -> Self {
 		Self(SmallVec::default())
 	}
 }
 
-impl<T> UiSystemCollection for UpdateSystemCollection<T> {
-	type SystemInput = UpdateContext<'static, T>;
-	type SystemOutput = <UpdateContext<'static, T> as UiSystemContext>::Result;
+impl<T> UiSystemCollection for EventSystemCollection<T> {
+	type SystemInput = EventContext<'static, T>;
+	type SystemOutput = <EventContext<'static, T> as UiSystemContext>::Result;
 }
 
 #[derive(Debug, Component, Default, Clone, derive_more::Deref, derive_more::DerefMut)]

@@ -16,10 +16,7 @@ use super::AlbumCardComponent;
 use crate::{
 	app_event::AppEvent,
 	config::Theme,
-	tui::{
-		ecs::*,
-		event::{Dispatch, Event},
-	},
+	tui::{ecs::*, event::DispatchMethod},
 	util::Direction,
 };
 
@@ -78,20 +75,23 @@ impl LibraryComponent {
 	}
 
 	fn update(
-		context: UpdateContext<AppEvent>,
+		context: EventContext<AppEvent>,
 		mut focus: ResMut<Focus>,
-		mut event_queue: ResMut<EventQueue<AppEvent>>,
+		mut event_queue: ResMut<EventQueue>,
 		mut query: Query<&mut Self>,
 		areas: Query<&Area>,
 	) -> eyre::Result<EventFlow> {
 		let mut comp = query.get_mut(context.entity)?;
 		let flow = match context.event {
-			Event::App(AppEvent::MoveCursor(direction)) => {
+			AppEvent::MoveCursor(direction) => {
 				comp.move_cursor(*direction);
 				if let Some(target) = comp.album_cards.get(comp.selected_idx as usize) {
 					focus.target = *target;
 					let area = areas.get(*target)?;
-					event_queue.push(Dispatch::Target(context.entity), AppEvent::ScrollTo(**area));
+					event_queue.send(
+						DispatchMethod::Target(context.entity),
+						AppEvent::ScrollTo(**area),
+					);
 				}
 				EventFlow::Consume
 			}

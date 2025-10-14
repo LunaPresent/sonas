@@ -17,4 +17,5 @@ pub enum AppEvent {
 	},
 	ScrollTo(Rect),
 	TestError(String),
+	UpdateKeymap,
 }

@@ -13,9 +13,8 @@ use ratatui::{
 
 use super::ErrorReporterComponent;
 use crate::{
-	app_event::AppEvent,
 	config::Theme,
-	tui::{ecs::*, event::Event},
+	tui::{ecs::*, event::SystemEvent},
 };
 
 #[derive(Debug, Component)]
@@ -39,12 +38,12 @@ impl ErrorPopupComponent {
 	}
 
 	fn update(
-		context: UpdateContext<AppEvent>,
+		context: EventContext<SystemEvent>,
 		mut query: Query<(&mut Self, &ChildOf)>,
 		mut loggers: Query<&mut ErrorReporterComponent>,
 		mut cmd: Commands,
 	) -> eyre::Result<EventFlow> {
-		if let &Event::Tick(duration) = context.event {
+		if let &SystemEvent::Tick(duration) = context.event {
 			let (mut comp, parent) = query.get_mut(context.entity)?;
 			comp.ttl = comp.ttl.saturating_sub(duration);
 

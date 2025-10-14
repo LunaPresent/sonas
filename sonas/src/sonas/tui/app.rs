@@ -8,14 +8,13 @@ use std::{io, time::Duration};
 
 use color_eyre::eyre;
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
-use tokio::sync::mpsc::UnboundedReceiver;
+use tokio::sync::mpsc;
 
 use super::{
-	ecs::ComponentSystem,
-	event::{Event, EventSystem},
+	ecs::{ComponentSystem, DynEventDispatch},
+	event::{EventSystem, SystemEvent},
 	terminal::Terminal,
 };
-use crate::tui::event::EventDispatch;
 use controls::{AppSignalReceiver, SignalType};
 
 /// Simple interface to setup and run your application
@@ -26,54 +25,38 @@ use controls::{AppSignalReceiver, SignalType};
 ///
 /// # Examples
 /// ```
-/// #[derive(Debug, PartialEq, Eq)]
-/// enum MyAppEvent {
-///     Quit,
-///     CursorUp,
-///     CursorDown,
-/// }
-/// impl AppEvent for MyAppEvent {
-///     fn is_quit(&self) -> bool {
-///         self == &Self::Quit
-///     }
-/// }
-///
 /// # #[derive(Default, bevy_ecs::component::Component)]
 /// # struct ConfigManager;
 /// # #[derive(Default, bevy_ecs::component::Component)]
 /// # struct RootComponent;
-///
-/// let app = App::<MyAppEvent>::new()
+/// let app = App::new()
 ///     .with_component(ConfigManager::default())?
 ///     .with_main_component(RootComponent::default())?;
 /// app.run().await?;
 /// ```
 #[derive(Debug)]
-pub struct App<T>
-where
-	T: 'static,
-{
+pub struct App {
 	controls: AppControls,
 	signal_receiver: AppSignalReceiver,
-	event_system: EventSystem<T>,
-	ecs: ComponentSystem<T>,
+	event_system: EventSystem,
+	async_events: mpsc::UnboundedReceiver<DynEventDispatch>,
+	ecs: ComponentSystem,
 	tick_interval: Duration,
 	frame_interval: Duration,
 }
 
-impl<T> App<T>
-where
-	T: Send + Sync + 'static,
-{
+impl App {
 	/// Creates a new `App`
 	pub fn new() -> Self {
 		let (controls, signal_receiver) = AppControls::new();
 		let event_system = EventSystem::new();
-		let ecs = ComponentSystem::new(controls.clone(), event_system.sender());
+		let (async_event_sender, async_events) = mpsc::unbounded_channel();
+		let ecs = ComponentSystem::new(controls.clone(), async_event_sender);
 		Self {
 			controls,
 			signal_receiver,
 			event_system,
+			async_events,
 			ecs,
 			tick_interval: Duration::from_millis(100),
 			frame_interval: Duration::from_nanos(1),
@@ -82,7 +65,7 @@ where
 
 	pub fn with_entity(
 		mut self,
-		f: impl FnOnce(EntityBuilder<T>) -> eyre::Result<EntityBuilder<T>>,
+		f: impl FnOnce(EntityBuilder) -> eyre::Result<EntityBuilder>,
 	) -> eyre::Result<Self> {
 		Ok((f)(EntityBuilder::new(self.ecs.add_entity(), self))?.app())
 	}
@@ -114,8 +97,13 @@ where
 				) => {
 					self.event_system.stop().await?;
 				}
+				Some(ed) = self.async_events.recv() => {
+					self.ecs.dispatch_dyn_event(ed)?;
+				}
 				ed = self.event_system.next() => {
-					self.dispatch_event(ed?)?;
+					if let Some(event) = self.ecs.dispatch_system_event(ed?)? {
+						self.handle_propagated_event(event)?;
+					}
 				}
 				Some(signal) = self.signal_receiver.signal.recv() => {
 					match signal {
@@ -132,7 +120,10 @@ where
 		Ok(())
 	}
 
-	async fn recv_stop(is_running: bool, stop_receiver: &mut UnboundedReceiver<()>) -> Option<()> {
+	async fn recv_stop(
+		is_running: bool,
+		stop_receiver: &mut mpsc::UnboundedReceiver<()>,
+	) -> Option<()> {
 		if is_running {
 			stop_receiver.recv().await
 		} else {
@@ -149,26 +140,14 @@ where
 		Ok(())
 	}
 
-	fn dispatch_event(&mut self, ed: EventDispatch<T>) -> eyre::Result<()> {
-		let mut next_ed = Some(ed);
-		while let Some(ed) = next_ed {
-			let result = self.ecs.handle_event(ed)?;
-			if let Some(event) = result.propagated {
-				self.handle_propagated_event(event)?;
-			}
-			next_ed = result.requeued;
-		}
-		Ok(())
-	}
-
-	fn handle_propagated_event(&mut self, event: Event<T>) -> eyre::Result<()> {
+	fn handle_propagated_event(&mut self, event: SystemEvent) -> eyre::Result<()> {
 		match event {
-			Event::Key(KeyEvent {
+			SystemEvent::Key(KeyEvent {
 				code: KeyCode::Char('c'),
 				modifiers: KeyModifiers::CONTROL,
 				..
 			}) => self.controls.quit()?,
-			Event::Key(KeyEvent {
+			SystemEvent::Key(KeyEvent {
 				code: KeyCode::Char('z'),
 				modifiers: KeyModifiers::CONTROL,
 				..

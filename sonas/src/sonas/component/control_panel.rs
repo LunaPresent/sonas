@@ -11,9 +11,8 @@ use ratatui::{
 };
 
 use crate::{
-	app_event::AppEvent,
 	config::Theme,
-	tui::{ecs::*, event::Event},
+	tui::{ecs::*, event::SystemEvent},
 };
 
 #[derive(Debug, Component, Default, Clone, Copy)]
@@ -35,13 +34,13 @@ impl ControlPanelComponent {
 	}
 
 	fn update(
-		context: UpdateContext<AppEvent>,
+		context: EventContext<SystemEvent>,
 		mut query: Query<&mut Self>,
 	) -> eyre::Result<EventFlow> {
 		let mut comp = query.get_mut(context.entity)?;
 
 		Ok(match context.event {
-			Event::Mouse(mouse_event) => match mouse_event.kind {
+			SystemEvent::Mouse(mouse_event) => match mouse_event.kind {
 				crossterm::event::MouseEventKind::Down(MouseButton::Left) => {
 					comp.playing = !comp.playing;
 					EventFlow::Consume
