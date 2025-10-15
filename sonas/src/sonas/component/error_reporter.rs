@@ -6,10 +6,11 @@ use bevy_ecs::{
 	system::{Commands, Query, Res},
 };
 use color_eyre::eyre;
+use oprabeli::ecs::*;
 use ratatui::layout::{Constraint, Flex, Layout};
 
 use super::ErrorPopupComponent;
-use crate::{app_event::AppEvent, config::Settings, tui::ecs::*};
+use crate::{app_event::AppEvent, config::Settings};
 
 #[derive(Debug, Component, Default)]
 #[component(on_add = Self::register_systems)]

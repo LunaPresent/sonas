@@ -1,6 +1,7 @@
+use oprabeli::config::Action;
 use serde::{Deserialize, Serialize};
 
-use crate::{AppEvent, tui::config::Action, util::QuadDirection};
+use crate::{AppEvent, util::QuadDirection};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]

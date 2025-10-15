@@ -3,12 +3,13 @@ use bevy_ecs::{
 	system::{Query, Res},
 };
 use color_eyre::eyre;
+use oprabeli::ecs::*;
 use ratatui::{
 	layout::{Constraint, Layout},
 	widgets::{Block, BorderType, Borders, WidgetRef as _},
 };
 
-use crate::{config::Theme, tui::ecs::*};
+use crate::config::Theme;
 
 #[derive(Debug, Component, Default)]
 #[component(on_add = Self::register_systems)]

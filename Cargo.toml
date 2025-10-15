@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = ["sonas", "sonas-macros", "sonas-parser"]
+members = ["oprabeli", "sonas", "sonas-macros", "sonas-parser"]
 
 [workspace.package]
 version = "0.1.0"

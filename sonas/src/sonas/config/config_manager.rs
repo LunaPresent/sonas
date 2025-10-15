@@ -7,19 +7,16 @@ use bevy_ecs::{
 };
 use clap::error::Result;
 use notify::{RecommendedWatcher, RecursiveMode, Watcher as _};
+use oprabeli::{
+	ecs::{
+		AsyncEventQueue, EventContext, EventFlow, EventQueue, InitContext, UiComponent, UiSystem,
+	},
+	event::DispatchMethod,
+};
 use thiserror::Error;
 
 use super::{AppConfig, Keys, Settings, Theme};
-use crate::{
-	app_event::AppEvent,
-	tui::{
-		ecs::{
-			AsyncEventQueue, EventContext, EventFlow, EventQueue, InitContext, UiComponent,
-			UiSystem,
-		},
-		event::DispatchMethod,
-	},
-};
+use crate::app_event::AppEvent;
 
 #[derive(Debug, Error)]
 pub enum ConfigManagerError {

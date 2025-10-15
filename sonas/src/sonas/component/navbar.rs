@@ -4,10 +4,10 @@ use bevy_ecs::{
 	system::{Commands, Query},
 };
 use color_eyre::eyre;
+use oprabeli::ecs::*;
 use ratatui::layout::{Constraint, Layout};
 
 use super::{NavbarButtonComponent, navbar_button::NavbarButtonType};
-use crate::tui::ecs::*;
 
 #[derive(Debug, Component, Default)]
 #[component(on_add = Self::register_systems)]

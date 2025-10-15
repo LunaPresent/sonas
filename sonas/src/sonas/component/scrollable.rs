@@ -1,10 +1,10 @@
 use bevy_ecs::{component::Component, entity::Entity, system::Query};
 use color_eyre::eyre;
+use oprabeli::ecs::*;
 use ratatui::layout::{Rect, Size};
 
 use crate::{
 	app_event::AppEvent,
-	tui::ecs::*,
 	util::{Direction as _, IntoOffset as _, ResetOrigin as _},
 };
 

@@ -5,16 +5,14 @@ use std::{
 
 use bevy_ecs::{component::Component, system::Query};
 use color_eyre::eyre;
+use oprabeli::ecs::*;
 use ratatui::{
 	layout::{Constraint, Flex, Layout},
 	text::Span,
 	widgets::Widget,
 };
 
-use crate::{
-	tui::ecs::*,
-	util::{Direction as _, OctDirection},
-};
+use crate::util::{Direction as _, OctDirection};
 
 #[derive(Debug, Component)]
 #[component(on_add = Self::register_systems)]
