@@ -4,6 +4,7 @@ use bevy_ecs::{
 	system::{Commands, Query, Res, ResMut},
 };
 use color_eyre::eyre;
+use oprabeli::{config::KeyHandler, ecs::*};
 use ratatui::{
 	layout::{Constraint, Layout, Size},
 	style::Stylize,
@@ -17,7 +18,6 @@ use super::{
 use crate::{
 	app_event::AppEvent,
 	config::{Keys, Theme},
-	tui::{config::KeyHandler, ecs::*},
 };
 
 #[derive(Debug, Component)]

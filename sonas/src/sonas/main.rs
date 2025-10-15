@@ -2,19 +2,18 @@ mod app_event;
 mod cli;
 mod component;
 mod config;
-mod tui;
 mod util;
 
 use std::time::Duration;
 
 use color_eyre::eyre;
+use oprabeli::app::App;
 
 use app_event::AppEvent;
 use cli::Cli;
 use component::*;
 use config::ConfigManager;
-
-use crate::{tui::app::App, util::OctDirection};
+use util::OctDirection;
 
 #[tokio::main]
 async fn main() -> eyre::Result<()> {

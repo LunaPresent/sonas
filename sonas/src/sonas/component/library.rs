@@ -6,6 +6,7 @@ use bevy_ecs::{
 	system::{Commands, Query, Res, ResMut},
 };
 use color_eyre::eyre;
+use oprabeli::{ecs::*, event::DispatchMethod};
 use ratatui::{
 	layout::{Flex, Layout},
 	style::Stylize as _,
@@ -13,12 +14,7 @@ use ratatui::{
 };
 
 use super::AlbumCardComponent;
-use crate::{
-	app_event::AppEvent,
-	config::Theme,
-	tui::{ecs::*, event::DispatchMethod},
-	util::Direction,
-};
+use crate::{app_event::AppEvent, config::Theme, util::Direction};
 
 const CARD_WIDTH: u16 = 22;
 const CARD_HEIGHT: u16 = 14;

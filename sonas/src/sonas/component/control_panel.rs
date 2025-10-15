@@ -4,16 +4,14 @@ use bevy_ecs::{
 };
 use color_eyre::eyre;
 use crossterm::event::MouseButton;
+use oprabeli::{ecs::*, event::SystemEvent};
 use ratatui::{
 	layout::{Constraint, Layout},
 	style::Stylize as _,
 	widgets::{Block, Widget},
 };
 
-use crate::{
-	config::Theme,
-	tui::{ecs::*, event::SystemEvent},
-};
+use crate::config::Theme;
 
 #[derive(Debug, Component, Default, Clone, Copy)]
 #[component(on_add = Self::register_systems)]

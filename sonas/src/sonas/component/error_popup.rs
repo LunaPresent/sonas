@@ -6,16 +6,14 @@ use bevy_ecs::{
 	system::{Commands, Query, Res},
 };
 use color_eyre::eyre;
+use oprabeli::{ecs::*, event::SystemEvent};
 use ratatui::{
 	style::Stylize as _,
 	widgets::{Block, BorderType, Clear, Paragraph, Widget as _},
 };
 
 use super::ErrorReporterComponent;
-use crate::{
-	config::Theme,
-	tui::{ecs::*, event::SystemEvent},
-};
+use crate::config::Theme;
 
 #[derive(Debug, Component)]
 #[component(on_add = Self::register_systems)]

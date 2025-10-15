@@ -1,7 +1,7 @@
 use super::input_action::InputAction;
-use crate::tui::config::KeyConfig;
 use bevy_ecs::resource::Resource;
 use derive_more::Deref;
+use oprabeli::config::KeyConfig;
 use serde::Deserialize;
 
 #[derive(Debug, Deserialize, Resource, Deref)]
