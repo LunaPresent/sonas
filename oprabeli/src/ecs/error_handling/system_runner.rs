@@ -1,14 +1,12 @@
-use bevy_ecs::{
-	entity::Entity,
-	hierarchy::ChildOf,
-	system::{In, Query},
-	world::World,
-};
+use bevy_ecs::entity::Entity;
+use bevy_ecs::hierarchy::ChildOf;
+use bevy_ecs::system::{In, Query};
+use bevy_ecs::world::World;
 
-use super::{
-	error::ErrorHandleError, flow::ErrorFlow, ui_system_error::UiSystemResultInternalExt as _,
-};
-use crate::ecs::ui_component::{ErrorContext, ErrorSystemCollection, ErrorSystemId};
+use super::error::ErrorHandleError;
+use super::flow::ErrorFlow;
+use super::ui_system_error::UiSystemResultInternalExt as _;
+use crate::ecs::ui_component::*;
 
 struct EntityErrorInfo<E>
 where

@@ -1,19 +1,17 @@
-use core::{mem, num::NonZero};
+use core::mem;
+use core::num::NonZero;
 
-use bevy_ecs::{
-	entity::Entity,
-	hierarchy::{ChildOf, Children},
-	query::Without,
-	system::{In, InMut, Query, RunSystemOnce},
-	world::World,
-};
-use ratatui::{buffer::Buffer, layout::Rect};
+use bevy_ecs::entity::Entity;
+use bevy_ecs::hierarchy::{ChildOf, Children};
+use bevy_ecs::query::Without;
+use bevy_ecs::system::{In, InMut, Query, RunSystemOnce};
+use bevy_ecs::world::World;
+use ratatui::buffer::Buffer;
+use ratatui::layout::Rect;
 
 use super::{Area, Viewport, ViewportError, ZOrder};
-use crate::ecs::{
-	error_handling::UiSystemResultExt as _,
-	ui_component::{RenderContext, RenderSystemCollection, RenderSystemId},
-};
+use crate::ecs::error_handling::UiSystemResultExt as _;
+use crate::ecs::ui_component::*;
 
 #[derive(Debug, Clone, Copy)]
 struct EntityRenderInfo {

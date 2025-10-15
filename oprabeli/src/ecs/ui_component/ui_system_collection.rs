@@ -1,10 +1,12 @@
-use std::ops;
+use core::ops;
 
-use bevy_ecs::{component::Component, system::SystemId};
+use bevy_ecs::component::Component;
+use bevy_ecs::system::SystemId;
 use smallvec::SmallVec;
 
-use super::{ErrorContext, EventContext, InitContext, RenderContext, UiSystemContext};
-use crate::ecs::{Area, error_handling::UiSystemError};
+use super::*;
+use crate::ecs::Area;
+use crate::ecs::error_handling::UiSystemError;
 
 const N: usize = 3;
 

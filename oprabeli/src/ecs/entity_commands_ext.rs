@@ -1,6 +1,7 @@
-use bevy_ecs::{
-	bundle::Bundle, hierarchy::ChildOf, relationship::Relationship, system::EntityCommands,
-};
+use bevy_ecs::bundle::Bundle;
+use bevy_ecs::hierarchy::ChildOf;
+use bevy_ecs::relationship::Relationship;
+use bevy_ecs::system::EntityCommands;
 
 // TODO: documentation
 pub trait EntityCommandsExt {

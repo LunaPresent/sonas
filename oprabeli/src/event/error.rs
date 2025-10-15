@@ -1,5 +1,6 @@
 use thiserror::Error;
-use tokio::{sync::mpsc::error::SendError, task::JoinError};
+use tokio::sync::mpsc::error::SendError;
+use tokio::task::JoinError;
 
 use super::{EventDispatch, SystemEvent};
 

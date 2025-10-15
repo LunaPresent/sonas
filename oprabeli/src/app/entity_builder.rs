@@ -1,4 +1,5 @@
-use bevy_ecs::{component::Component, entity::Entity};
+use bevy_ecs::component::Component;
+use bevy_ecs::entity::Entity;
 
 use super::App;
 

@@ -17,14 +17,14 @@ pub use ui_component::{
 	ErrorContext, EventContext, InitContext, RenderContext, UiComponent, UiSystem,
 };
 
-use bevy_ecs::{bundle::Bundle, entity::Entity, world::World};
+use bevy_ecs::bundle::Bundle;
+use bevy_ecs::entity::Entity;
+use bevy_ecs::world::World;
 use ratatui::Frame;
 use tokio::sync::mpsc;
 
-use super::{
-	app::AppControls,
-	event::{DispatchMethod, EventDispatch, SystemEvent},
-};
+use super::app::AppControls;
+use super::event::*;
 use event_handling::EventDispatcher;
 use init::init_components;
 use rendering::Renderer;

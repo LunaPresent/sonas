@@ -1,11 +1,10 @@
-use bevy_ecs::{
-	entity::Entity,
-	query::Changed,
-	system::{Commands, Query},
-	world::World,
-};
+use bevy_ecs::entity::Entity;
+use bevy_ecs::query::Changed;
+use bevy_ecs::system::{Commands, Query};
+use bevy_ecs::world::World;
 
-use crate::ecs::{InitContext, ui_component::InitSystemCollection};
+use crate::ecs::InitContext;
+use crate::ecs::ui_component::InitSystemCollection;
 
 pub(crate) fn init_components(
 	query: Query<(&mut InitSystemCollection, Entity), Changed<InitSystemCollection>>,

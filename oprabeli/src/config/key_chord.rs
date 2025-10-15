@@ -1,4 +1,5 @@
-use std::{fmt, str::FromStr};
+use core::fmt;
+use core::str::FromStr;
 
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 

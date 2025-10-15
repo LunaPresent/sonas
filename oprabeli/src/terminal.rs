@@ -1,10 +1,10 @@
 use std::io::{Stdout, stdout};
 
-use crossterm::{
-	cursor,
-	event::{DisableBracketedPaste, DisableMouseCapture, EnableBracketedPaste, EnableMouseCapture},
-	terminal::{EnterAlternateScreen, LeaveAlternateScreen},
+use crossterm::cursor;
+use crossterm::event::{
+	DisableBracketedPaste, DisableMouseCapture, EnableBracketedPaste, EnableMouseCapture,
 };
+use crossterm::terminal::{EnterAlternateScreen, LeaveAlternateScreen};
 use derive_more::{Deref, DerefMut};
 use ratatui::backend::CrosstermBackend as Backend;
 

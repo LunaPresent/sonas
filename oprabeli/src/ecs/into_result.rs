@@ -1,4 +1,4 @@
-use std::convert::Infallible;
+use core::convert::Infallible;
 
 pub(crate) trait IntoResult<T> {
 	type Error;

@@ -1,9 +1,7 @@
 use bevy_ecs::component::Component;
 use derive_more::{Deref, DerefMut};
-use ratatui::{
-	buffer::Buffer,
-	layout::{Position, Rect, Size},
-};
+use ratatui::buffer::Buffer;
+use ratatui::layout::{Position, Rect, Size};
 
 use super::ViewportError;
 

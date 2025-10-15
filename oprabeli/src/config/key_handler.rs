@@ -1,15 +1,11 @@
 use std::time::Duration;
 
-use bevy_ecs::{
-	component::Component,
-	system::{Query, ResMut},
-};
+use bevy_ecs::component::Component;
+use bevy_ecs::system::{Query, ResMut};
 
 use super::{KeyChord, KeyMap, KeyMapMatch};
-use crate::{
-	ecs::{EventContext, EventFlow, EventQueue, UiComponent, UiSystem},
-	event::{DispatchMethod, SystemEvent},
-};
+use crate::ecs::*;
+use crate::event::*;
 
 #[derive(Debug, Component)]
 #[component(on_add = Self::register_systems)]

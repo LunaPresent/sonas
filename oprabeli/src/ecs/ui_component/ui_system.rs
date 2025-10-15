@@ -1,16 +1,12 @@
+use core::marker::PhantomData;
 use core::mem;
-use std::marker::PhantomData;
 
-use bevy_ecs::{
-	system::{IntoSystem, SystemId},
-	world::{EntityWorldMut, World},
-};
+use bevy_ecs::system::{IntoSystem, SystemId};
+use bevy_ecs::world::{EntityWorldMut, World};
 
 use super::UiSystemContext;
-use crate::ecs::{
-	error_handling::{UiSystemError, map_system_error},
-	into_result::IntoResult,
-};
+use crate::ecs::error_handling::{UiSystemError, map_system_error};
+use crate::ecs::into_result::IntoResult;
 
 // TODO: documentation
 pub struct UiSystem {

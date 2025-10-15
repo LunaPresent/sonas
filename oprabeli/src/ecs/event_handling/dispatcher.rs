@@ -1,21 +1,15 @@
-use bevy_ecs::{
-	entity::Entity,
-	hierarchy::{ChildOf, Children},
-	query::Without,
-	system::{In, InMut, Local, Query, Res, RunSystemOnce as _},
-	world::World,
-};
+use bevy_ecs::entity::Entity;
+use bevy_ecs::hierarchy::{ChildOf, Children};
+use bevy_ecs::query::Without;
+use bevy_ecs::system::{In, InMut, Local, Query, Res, RunSystemOnce as _};
+use bevy_ecs::world::World;
 use ratatui::layout::Position;
 
 use super::{EventFlow, Focus};
-use crate::{
-	ecs::{
-		Area, DispatchMethod, Viewport,
-		error_handling::UiSystemResultExt as _,
-		ui_component::{EventContext, EventSystemCollection, EventSystemId},
-	},
-	event::{CursorAction, EventDispatch},
-};
+use crate::ecs::error_handling::UiSystemResultExt as _;
+use crate::ecs::ui_component::*;
+use crate::ecs::*;
+use crate::event::{CursorAction, EventDispatch};
 
 #[derive(Debug)]
 struct EntityEventInfo {

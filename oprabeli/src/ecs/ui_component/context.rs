@@ -1,15 +1,11 @@
-use bevy_ecs::{
-	component::{Component, Mutable},
-	entity::Entity,
-	system::SystemInput,
-};
+use bevy_ecs::component::{Component, Mutable};
+use bevy_ecs::entity::Entity;
+use bevy_ecs::system::SystemInput;
 use ratatui::buffer::Buffer;
 
-use super::{
-	ErrorSystemCollection, EventSystemCollection, InitSystemCollection, RenderSystemCollection,
-	UiSystemCollection,
-};
-use crate::ecs::{EventFlow, error_handling::ErrorFlow};
+use super::*;
+use crate::ecs::EventFlow;
+use crate::ecs::error_handling::ErrorFlow;
 
 pub(crate) trait UiSystemContext: SystemInput {
 	type Result;

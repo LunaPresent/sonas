@@ -1,10 +1,9 @@
-use std::{fmt, marker::PhantomData};
+use core::fmt;
+use core::marker::PhantomData;
 
-use serde::{
-	Deserialize, Serialize, Serializer,
-	de::{MapAccess, Visitor},
-	ser::SerializeMap as _,
-};
+use serde::de::{MapAccess, Visitor};
+use serde::ser::SerializeMap as _;
+use serde::{Deserialize, Serialize, Serializer};
 
 use super::{Action, KeyMap, KeyMapping, KeySequence, util::OneOrMany};
 

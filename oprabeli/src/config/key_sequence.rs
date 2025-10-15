@@ -1,4 +1,6 @@
-use std::{fmt, ops::Deref, str::FromStr};
+use core::fmt;
+use core::ops::Deref;
+use core::str::FromStr;
 
 use serde_with::{DeserializeFromStr, SerializeDisplay};
 use smallvec::SmallVec;

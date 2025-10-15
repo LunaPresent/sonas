@@ -1,4 +1,5 @@
-use super::{system_runner::ErrorSystemRunner, ui_system_error::UiSystemError};
+use super::system_runner::ErrorSystemRunner;
+use super::ui_system_error::UiSystemError;
 use crate::ecs::into_result::IntoResult;
 
 pub(crate) fn map_system_error<R, T>(result: R) -> Result<T, UiSystemError>

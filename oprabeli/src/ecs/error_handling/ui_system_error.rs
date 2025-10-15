@@ -1,6 +1,8 @@
-use bevy_ecs::{entity::Entity, world::World};
+use bevy_ecs::entity::Entity;
+use bevy_ecs::world::World;
 
-use super::{error::ErrorHandleError, system_runner::RunErrorSystems};
+use super::error::ErrorHandleError;
+use super::system_runner::RunErrorSystems;
 
 const MAX_RECURSE: u16 = 1024;
 

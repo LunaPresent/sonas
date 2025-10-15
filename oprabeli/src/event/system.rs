@@ -1,10 +1,10 @@
+use core::time::Duration;
+
 use crossterm::event::{Event as CrosstermEvent, MouseEvent, MouseEventKind};
 use futures::{FutureExt, StreamExt};
-use std::time::Duration;
-use tokio::{
-	sync::mpsc::{self, error::SendError},
-	task::JoinHandle,
-};
+use tokio::sync::mpsc;
+use tokio::sync::mpsc::error::SendError;
+use tokio::task::JoinHandle;
 use tokio_util::sync::CancellationToken;
 
 use crate::event::{CursorAction, SystemEvent};
