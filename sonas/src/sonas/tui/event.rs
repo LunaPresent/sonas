@@ -7,7 +7,7 @@ pub use system::EventSystem;
 use std::time::Duration;
 
 use bevy_ecs::entity::Entity;
-use crossterm::event::{KeyEvent, MouseEvent, MouseEventKind};
+use crossterm::event::{KeyEvent, MouseEvent};
 
 #[derive(Debug)]
 pub(crate) struct EventDispatch<T> {
@@ -28,9 +28,16 @@ pub enum DispatchMethod {
 	Cursor {
 		x: u16,
 		y: u16,
-		kind: MouseEventKind,
+		action: CursorAction,
 	},
 	Target(Entity),
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum CursorAction {
+	Retain,
+	Engage,
+	Release,
 }
 
 #[allow(dead_code)]

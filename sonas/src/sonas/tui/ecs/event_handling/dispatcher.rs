@@ -2,21 +2,20 @@ use bevy_ecs::{
 	entity::Entity,
 	hierarchy::{ChildOf, Children},
 	query::Without,
-	system::{In, InMut, Local, Query, Res, ResMut, RunSystemOnce as _},
+	system::{In, InMut, Local, Query, Res, RunSystemOnce as _},
 	world::World,
 };
 use color_eyre::eyre;
-use crossterm::event::MouseEventKind;
 use ratatui::layout::Position;
 
-use super::{CursorPos, EventFlow, Focus};
+use super::{EventFlow, Focus};
 use crate::tui::{
 	ecs::{
 		Area, DispatchMethod, Viewport,
 		error_handling::UiSystemResultExt as _,
 		ui_component::{EventContext, EventSystemCollection, EventSystemId},
 	},
-	event::EventDispatch,
+	event::{CursorAction, EventDispatch},
 };
 
 #[derive(Debug)]
@@ -109,9 +108,8 @@ where
 			DispatchMethod::Broadcast => {
 				world.run_system_once_with(Self::find_broadcast_entities, queue)?
 			}
-			DispatchMethod::Cursor { x, y, kind } => {
-				world.run_system_cached_with(Self::find_cursor_entities, (queue, x, y, kind))??
-			}
+			DispatchMethod::Cursor { x, y, action } => world
+				.run_system_cached_with(Self::find_cursor_entities, (queue, x, y, action))??,
 			DispatchMethod::Target(target) => {
 				world.run_system_once_with(Self::find_target_entities, (queue, target))?
 			}
@@ -201,41 +199,26 @@ where
 		reason = "most of the arguments are injected by bevy"
 	)]
 	fn find_cursor_entities(
-		(InMut(targets), In(x), In(y), In(kind)): (
+		(InMut(targets), In(x), In(y), In(action)): (
 			InMut<Vec<EntityEventInfo>>,
 			In<u16>,
 			In<u16>,
-			In<MouseEventKind>,
+			In<CursorAction>,
 		),
 		mut clicked: Local<Option<Entity>>,
-		mut cursor_pos: ResMut<CursorPos>,
-		broadcast_components: Query<(Entity, &EventSystemCollection<T>)>,
 		root_entities: Query<Entity, Without<ChildOf>>,
 		areas: Query<(Option<&Area>, Option<&Children>, Option<&Viewport>)>,
 		systems: Query<&EventSystemCollection<T>>,
 		parents: Query<&ChildOf>,
 	) -> eyre::Result<()> {
-		cursor_pos.x = x;
-		cursor_pos.y = y;
-
-		let target = match kind {
-			MouseEventKind::Up(_) | MouseEventKind::Drag(_) => *clicked,
-			MouseEventKind::Moved => {
-				for (entity, handle) in broadcast_components {
-					for &system in handle.iter() {
-						targets.push(EntityEventInfo {
-							entity,
-							system_id: system.entity(),
-						});
-					}
-				}
-				return Ok(());
-			}
-			_ => Self::find_cursor_target(x, y, root_entities, areas)?,
+		let target = if clicked.is_some() {
+			*clicked
+		} else {
+			Self::find_cursor_target(x, y, root_entities, areas)?
 		};
-		match kind {
-			MouseEventKind::Down(_) => *clicked = target,
-			MouseEventKind::Up(_) => *clicked = None,
+		match action {
+			CursorAction::Engage => *clicked = target,
+			CursorAction::Release => *clicked = None,
 			_ => (),
 		}
 

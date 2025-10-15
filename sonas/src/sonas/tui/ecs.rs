@@ -10,7 +10,7 @@ mod ui_component;
 pub use entity_commands_ext::EntityCommandsExt;
 pub use error_handling::ErrorFlow;
 pub(crate) use event_handling::DynEventDispatch;
-pub use event_handling::{AsyncEventQueue, CursorPos, EventFlow, EventQueue, Focus};
+pub use event_handling::{AsyncEventQueue, EventFlow, EventQueue, Focus};
 pub use rendering::{Area, Viewport, ZOrder};
 pub use signal::Signal;
 pub use ui_component::{
@@ -45,7 +45,6 @@ impl ComponentSystem {
 		let mut world = World::new();
 		world.insert_resource(Signal::new(controls));
 		world.insert_resource(Focus::default());
-		world.insert_resource(CursorPos::default());
 		world.insert_resource(EventQueue::default());
 		world.insert_resource(AsyncEventQueue::new(event_sender));
 

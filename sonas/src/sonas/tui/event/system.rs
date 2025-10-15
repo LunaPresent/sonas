@@ -1,4 +1,4 @@
-use crossterm::event::Event as CrosstermEvent;
+use crossterm::event::{Event as CrosstermEvent, MouseEvent, MouseEventKind};
 use futures::{FutureExt, StreamExt};
 use std::time::Duration;
 use tokio::{
@@ -7,7 +7,7 @@ use tokio::{
 };
 use tokio_util::sync::CancellationToken;
 
-use crate::tui::event::SystemEvent;
+use crate::tui::event::{CursorAction, SystemEvent};
 
 use super::{DispatchMethod, EventDispatch, EventError};
 
@@ -90,14 +90,14 @@ impl EventSystem {
 					))?;
 				}
 				Some(Ok(evt)) = crossterm_events.next().fuse() => {
-					Self::handle_crossterm_event(&sender, evt)?;
+					Self::send_crossterm_event(&sender, evt)?;
 				}
 			};
 		}
 		Ok(())
 	}
 
-	fn handle_crossterm_event(
+	fn send_crossterm_event(
 		sender: &mpsc::UnboundedSender<EventDispatch<SystemEvent>>,
 		evt: CrosstermEvent,
 	) -> Result<(), SendError<EventDispatch<SystemEvent>>> {
@@ -114,14 +114,9 @@ impl EventSystem {
 				DispatchMethod::Input,
 				SystemEvent::Key(key_event),
 			)),
-			CrosstermEvent::Mouse(mouse_event) => sender.send(EventDispatch::new(
-				DispatchMethod::Cursor {
-					x: mouse_event.column,
-					y: mouse_event.row,
-					kind: mouse_event.kind,
-				},
-				SystemEvent::Mouse(mouse_event),
-			)),
+			CrosstermEvent::Mouse(mouse_event) => {
+				Self::send_crossterm_mouse_event(sender, mouse_event)
+			}
 			CrosstermEvent::Paste(s) => sender.send(EventDispatch::new(
 				DispatchMethod::Input,
 				SystemEvent::Paste(s),
@@ -131,5 +126,33 @@ impl EventSystem {
 				SystemEvent::Resize { width, height },
 			)),
 		}
+	}
+
+	fn send_crossterm_mouse_event(
+		sender: &mpsc::UnboundedSender<EventDispatch<SystemEvent>>,
+		evt: MouseEvent,
+	) -> Result<(), SendError<EventDispatch<SystemEvent>>> {
+		let x = evt.column;
+		let y = evt.row;
+		let dispatch_method = match evt.kind {
+			MouseEventKind::Moved => DispatchMethod::Broadcast,
+			MouseEventKind::Down(_) | MouseEventKind::Drag(_) => DispatchMethod::Cursor {
+				x,
+				y,
+				action: CursorAction::Engage,
+			},
+			MouseEventKind::Up(_) => DispatchMethod::Cursor {
+				x,
+				y,
+				action: CursorAction::Release,
+			},
+			_ => DispatchMethod::Cursor {
+				x,
+				y,
+				action: CursorAction::Retain,
+			},
+		};
+
+		sender.send(EventDispatch::new(dispatch_method, SystemEvent::Mouse(evt)))
 	}
 }
