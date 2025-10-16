@@ -1,13 +1,10 @@
-use bevy_ecs::{
-	component::Component,
-	system::{Query, Res},
-};
 use color_eyre::eyre;
+use oprabeli::bevy_ecs;
+use oprabeli::bevy_ecs::component::Component;
+use oprabeli::bevy_ecs::system::{Query, Res};
 use oprabeli::ecs::*;
-use ratatui::{
-	layout::{Constraint, Layout},
-	widgets::{Block, BorderType, Borders, WidgetRef as _},
-};
+use oprabeli::ratatui::layout::{Constraint, Layout};
+use oprabeli::ratatui::widgets::{Block, BorderType, Borders, WidgetRef as _};
 
 use crate::config::Theme;
 

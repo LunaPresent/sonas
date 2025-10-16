@@ -1,12 +1,13 @@
-use bevy_ecs::{component::Component, entity::Entity, system::Query};
 use color_eyre::eyre;
+use oprabeli::bevy_ecs;
+use oprabeli::bevy_ecs::component::Component;
+use oprabeli::bevy_ecs::entity::Entity;
+use oprabeli::bevy_ecs::system::Query;
 use oprabeli::ecs::*;
-use ratatui::layout::{Rect, Size};
+use oprabeli::ratatui::layout::{Rect, Size};
 
-use crate::{
-	app_event::AppEvent,
-	util::{Direction as _, IntoOffset as _, ResetOrigin as _},
-};
+use crate::app_event::AppEvent;
+use crate::util::{Direction as _, IntoOffset as _, ResetOrigin as _};
 
 #[derive(Debug, Component)]
 #[require(Viewport)]

@@ -1,16 +1,16 @@
 use std::collections::VecDeque;
 
-use bevy_ecs::{
-	component::Component,
-	entity::Entity,
-	system::{Commands, Query, Res},
-};
 use color_eyre::eyre;
+use oprabeli::bevy_ecs;
+use oprabeli::bevy_ecs::component::Component;
+use oprabeli::bevy_ecs::entity::Entity;
+use oprabeli::bevy_ecs::system::{Commands, Query, Res};
 use oprabeli::ecs::*;
-use ratatui::layout::{Constraint, Flex, Layout};
+use oprabeli::ratatui::layout::{Constraint, Flex, Layout};
 
 use super::ErrorPopupComponent;
-use crate::{app_event::AppEvent, config::Settings};
+use crate::app_event::AppEvent;
+use crate::config::Settings;
 
 #[derive(Debug, Component, Default)]
 #[component(on_add = Self::register_systems)]

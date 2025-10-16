@@ -1,5 +1,6 @@
-use bevy_ecs::resource::Resource;
-use ratatui::style::Color;
+use oprabeli::bevy_ecs;
+use oprabeli::bevy_ecs::resource::Resource;
+use oprabeli::ratatui::style::Color;
 use serde::Deserialize;
 
 #[derive(Debug, Deserialize)]

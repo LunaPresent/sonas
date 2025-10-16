@@ -1,16 +1,13 @@
 use std::time::Duration;
 
-use bevy_ecs::{
-	component::Component,
-	hierarchy::ChildOf,
-	system::{Commands, Query, Res},
-};
 use color_eyre::eyre;
+use oprabeli::bevy_ecs;
+use oprabeli::bevy_ecs::component::Component;
+use oprabeli::bevy_ecs::hierarchy::ChildOf;
+use oprabeli::bevy_ecs::system::{Commands, Query, Res};
+use oprabeli::ratatui::style::Stylize as _;
+use oprabeli::ratatui::widgets::{Block, BorderType, Clear, Paragraph, Widget as _};
 use oprabeli::{ecs::*, event::SystemEvent};
-use ratatui::{
-	style::Stylize as _,
-	widgets::{Block, BorderType, Clear, Paragraph, Widget as _},
-};
 
 use super::ErrorReporterComponent;
 use crate::config::Theme;

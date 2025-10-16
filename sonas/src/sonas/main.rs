@@ -4,7 +4,7 @@ mod component;
 mod config;
 mod util;
 
-use std::time::Duration;
+use core::time::Duration;
 
 use color_eyre::eyre;
 use oprabeli::app::App;

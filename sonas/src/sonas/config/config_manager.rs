@@ -1,18 +1,13 @@
 use std::path::PathBuf;
 
 use ::config::{Config, ConfigError, File, FileFormat};
-use bevy_ecs::{
-	component::Component,
-	system::{Commands, Query, Res, ResMut},
-};
 use clap::error::Result;
 use notify::{RecommendedWatcher, RecursiveMode, Watcher as _};
-use oprabeli::{
-	ecs::{
-		AsyncEventQueue, EventContext, EventFlow, EventQueue, InitContext, UiComponent, UiSystem,
-	},
-	event::DispatchMethod,
-};
+use oprabeli::bevy_ecs;
+use oprabeli::bevy_ecs::component::Component;
+use oprabeli::bevy_ecs::system::{Commands, Query, Res, ResMut};
+use oprabeli::ecs::*;
+use oprabeli::event::DispatchMethod;
 use thiserror::Error;
 
 use super::{AppConfig, Keys, Settings, Theme};

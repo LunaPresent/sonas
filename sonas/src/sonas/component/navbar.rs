@@ -1,11 +1,10 @@
-use bevy_ecs::{
-	component::Component,
-	entity::Entity,
-	system::{Commands, Query},
-};
 use color_eyre::eyre;
+use oprabeli::bevy_ecs;
+use oprabeli::bevy_ecs::component::Component;
+use oprabeli::bevy_ecs::entity::Entity;
+use oprabeli::bevy_ecs::system::{Commands, Query};
 use oprabeli::ecs::*;
-use ratatui::layout::{Constraint, Layout};
+use oprabeli::ratatui::layout::{Constraint, Layout};
 
 use super::{NavbarButtonComponent, navbar_button::NavbarButtonType};
 
