@@ -1,17 +1,14 @@
 use std::iter;
 
-use bevy_ecs::{
-	component::Component,
-	entity::Entity,
-	system::{Commands, Query, Res, ResMut},
-};
 use color_eyre::eyre;
+use oprabeli::bevy_ecs;
+use oprabeli::bevy_ecs::component::Component;
+use oprabeli::bevy_ecs::entity::Entity;
+use oprabeli::bevy_ecs::system::{Commands, Query, Res, ResMut};
+use oprabeli::ratatui::layout::{Flex, Layout};
+use oprabeli::ratatui::style::Stylize as _;
+use oprabeli::ratatui::widgets::{Block, Widget as _};
 use oprabeli::{ecs::*, event::DispatchMethod};
-use ratatui::{
-	layout::{Flex, Layout},
-	style::Stylize as _,
-	widgets::{Block, Widget as _},
-};
 
 use super::AlbumCardComponent;
 use crate::{app_event::AppEvent, config::Theme, util::Direction};

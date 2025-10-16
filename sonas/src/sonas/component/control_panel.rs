@@ -1,15 +1,13 @@
-use bevy_ecs::{
-	component::Component,
-	system::{Query, Res},
-};
 use color_eyre::eyre;
-use crossterm::event::MouseButton;
-use oprabeli::{ecs::*, event::SystemEvent};
-use ratatui::{
-	layout::{Constraint, Layout},
-	style::Stylize as _,
-	widgets::{Block, Widget},
-};
+use oprabeli::bevy_ecs;
+use oprabeli::bevy_ecs::component::Component;
+use oprabeli::bevy_ecs::system::{Query, Res};
+use oprabeli::crossterm::event::{MouseButton, MouseEventKind};
+use oprabeli::ecs::*;
+use oprabeli::event::SystemEvent;
+use oprabeli::ratatui::layout::{Constraint, Flex, Layout};
+use oprabeli::ratatui::style::Stylize as _;
+use oprabeli::ratatui::widgets::{Block, Widget};
 
 use crate::config::Theme;
 
@@ -39,7 +37,7 @@ impl ControlPanelComponent {
 
 		Ok(match context.event {
 			SystemEvent::Mouse(mouse_event) => match mouse_event.kind {
-				crossterm::event::MouseEventKind::Down(MouseButton::Left) => {
+				MouseEventKind::Down(MouseButton::Left) => {
 					comp.playing = !comp.playing;
 					EventFlow::Consume
 				}
@@ -62,10 +60,10 @@ impl ControlPanelComponent {
 			.render(area, context.buffer);
 
 		let [button_area] = Layout::vertical([Constraint::Length(1)])
-			.flex(ratatui::layout::Flex::Center)
+			.flex(Flex::Center)
 			.areas(area);
 		let [button_area] = Layout::horizontal([Constraint::Length(2)])
-			.flex(ratatui::layout::Flex::Center)
+			.flex(Flex::Center)
 			.areas(button_area);
 
 		comp.icon().render(button_area, context.buffer);

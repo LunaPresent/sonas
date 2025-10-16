@@ -2,7 +2,7 @@ mod direction;
 
 pub use direction::*;
 
-use ratatui::layout::{Offset, Position, Rect};
+use oprabeli::ratatui::layout::{Offset, Position, Rect};
 
 pub trait IntoOffset {
 	fn into_offset(self) -> Offset;

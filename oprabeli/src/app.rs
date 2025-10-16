@@ -25,7 +25,7 @@ use controls::{AppSignalReceiver, SignalType};
 /// # Examples
 /// ```no_run
 /// # use std::time::Duration;
-/// # use oprabeli::App;
+/// # use oprabeli::app::App;
 /// # #[derive(Default, bevy_ecs::component::Component)]
 /// # struct ConfigManager;
 /// # #[derive(Default, bevy_ecs::component::Component)]

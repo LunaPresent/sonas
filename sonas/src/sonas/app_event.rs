@@ -1,4 +1,4 @@
-use ratatui::layout::Rect;
+use oprabeli::ratatui::layout::Rect;
 
 use crate::util::QuadDirection;
 

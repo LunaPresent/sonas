@@ -1,6 +1,7 @@
 use core::time::Duration;
 
-use bevy_ecs::resource::Resource;
+use oprabeli::bevy_ecs;
+use oprabeli::bevy_ecs::resource::Resource;
 use serde::Deserialize;
 use serde_with::{DurationSecondsWithFrac, serde_as};
 

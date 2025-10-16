@@ -1,12 +1,12 @@
-use bevy_ecs::{component::Component, system::Query};
 use color_eyre::eyre;
-use crossterm::event::{MouseEvent, MouseEventKind};
+use oprabeli::bevy_ecs;
+use oprabeli::bevy_ecs::component::Component;
+use oprabeli::bevy_ecs::system::Query;
+use oprabeli::crossterm::event::{MouseEvent, MouseEventKind};
+use oprabeli::ratatui::layout::{Constraint, Flex, Layout, Position};
+use oprabeli::ratatui::style::{Color, Stylize as _};
+use oprabeli::ratatui::widgets::{Block, Padding, Widget as _, WidgetRef as _};
 use oprabeli::{ecs::*, event::SystemEvent};
-use ratatui::{
-	layout::{Constraint, Flex, Layout, Position},
-	style::{Color, Stylize as _},
-	widgets::{Block, Padding, Widget as _, WidgetRef as _},
-};
 
 #[derive(Debug, Clone, Copy)]
 pub enum NavbarButtonType {

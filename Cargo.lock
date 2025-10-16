@@ -2461,17 +2461,14 @@ name = "sonas"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "bevy_ecs",
  "clap",
  "color-eyre",
  "config",
- "crossterm 0.29.0",
  "derive_more",
  "directories",
  "interprocess",
  "notify",
  "oprabeli",
- "ratatui",
  "serde",
  "serde_with",
  "sonas-macros",

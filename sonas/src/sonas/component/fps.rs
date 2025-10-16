@@ -3,14 +3,14 @@ use std::{
 	time::{Duration, Instant},
 };
 
-use bevy_ecs::{component::Component, system::Query};
 use color_eyre::eyre;
+use oprabeli::bevy_ecs;
+use oprabeli::bevy_ecs::component::Component;
+use oprabeli::bevy_ecs::system::Query;
 use oprabeli::ecs::*;
-use ratatui::{
-	layout::{Constraint, Flex, Layout},
-	text::Span,
-	widgets::Widget,
-};
+use oprabeli::ratatui::layout::{Constraint, Flex, Layout};
+use oprabeli::ratatui::text::Span;
+use oprabeli::ratatui::widgets::Widget;
 
 use crate::util::{Direction as _, OctDirection};
 

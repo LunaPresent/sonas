@@ -1,15 +1,13 @@
-use bevy_ecs::{
-	component::Component,
-	entity::Entity,
-	system::{Commands, Query, Res, ResMut},
-};
 use color_eyre::eyre;
-use oprabeli::{config::KeyHandler, ecs::*};
-use ratatui::{
-	layout::{Constraint, Layout, Size},
-	style::Stylize,
-	widgets::{Block, Widget},
-};
+use oprabeli::bevy_ecs;
+use oprabeli::bevy_ecs::component::Component;
+use oprabeli::bevy_ecs::entity::Entity;
+use oprabeli::bevy_ecs::system::{Commands, Query, Res, ResMut};
+use oprabeli::config::KeyHandler;
+use oprabeli::ecs::*;
+use oprabeli::ratatui::layout::{Constraint, Layout, Size};
+use oprabeli::ratatui::style::Stylize;
+use oprabeli::ratatui::widgets::{Block, Widget};
 
 use super::{
 	ControlPanelComponent, ErrorReporterComponent, LibraryComponent, NavbarComponent,

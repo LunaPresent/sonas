@@ -1,6 +1,7 @@
 use super::input_action::InputAction;
-use bevy_ecs::resource::Resource;
 use derive_more::Deref;
+use oprabeli::bevy_ecs;
+use oprabeli::bevy_ecs::resource::Resource;
 use oprabeli::config::KeyConfig;
 use serde::Deserialize;
 
