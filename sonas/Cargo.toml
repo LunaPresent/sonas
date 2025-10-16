@@ -30,7 +30,7 @@ path = "src/sonasctl/main.rs"
 sonas-macros.workspace = true
 sonas-parser.workspace = true
 oprabeli.path = "../oprabeli"
-bevy_ecs = "0.16.1"
+bevy_ecs = "0.17.2"
 clap = { version = "4.5.41", features = [
     "derive",
     "cargo",

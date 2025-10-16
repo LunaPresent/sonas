@@ -9,7 +9,7 @@ repository.workspace = true
 authors = ["Luna Present <code@lunapresent.net>"]
 
 [dependencies]
-bevy_ecs = "0.16.0"
+bevy_ecs = "0.17.0"
 crossterm = { version = "0.29.0", features = ["event-stream"] }
 derive_more = { version = "2.0.1", features = ["deref", "deref_mut", "from"] }
 eyre = "0.6.12"

@@ -1,3 +1,4 @@
+mod bevy_error_wrapper;
 mod entity_commands_ext;
 mod error_handling;
 mod event_handling;
@@ -7,6 +8,7 @@ mod rendering;
 mod signal;
 mod ui_component;
 
+pub use bevy_error_wrapper::BevyErrorWrapper;
 pub use entity_commands_ext::EntityCommandsExt;
 pub use error_handling::ErrorFlow;
 pub(crate) use event_handling::DynEventDispatch;

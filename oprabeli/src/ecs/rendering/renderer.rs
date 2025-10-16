@@ -11,7 +11,7 @@ use ratatui::layout::Rect;
 
 use super::{Area, Viewport, ViewportError, ZOrder};
 use crate::ecs::error_handling::UiSystemResultExt as _;
-use crate::ecs::ui_component::*;
+use crate::ecs::{BevyErrorWrapper, ui_component::*};
 
 #[derive(Debug, Clone, Copy)]
 struct EntityRenderInfo {
@@ -42,8 +42,12 @@ impl Renderer {
 			queue.clear();
 		}
 		self.viewport_count = 0;
-		world.run_system_once_with(Self::set_area_sizes, area)?;
-		world.run_system_once_with(Self::find_render_targets, self)??;
+		world
+			.run_system_once_with(Self::set_area_sizes, area)
+			.map_err(BevyErrorWrapper::from)?;
+		world
+			.run_system_once_with(Self::find_render_targets, self)
+			.map_err(BevyErrorWrapper::from)??;
 
 		for queue in &mut self.queues_per_viewport {
 			queue.sort_unstable_by(|a, b| {
@@ -162,9 +166,13 @@ impl Renderer {
 					.handle(render_info.entity, world)?;
 			}
 			if let Some(next_queue_idx) = render_info.next_queue_idx {
-				world.run_system_once_with(Self::prepare_viewport, (render_info.entity, buf))??;
+				world
+					.run_system_once_with(Self::prepare_viewport, (render_info.entity, buf))
+					.map_err(BevyErrorWrapper::from)??;
 				self.render_queue(next_queue_idx.get() as usize, buf, world)?;
-				world.run_system_once_with(Self::cleanup_viewport, (render_info.entity, buf))??;
+				world
+					.run_system_once_with(Self::cleanup_viewport, (render_info.entity, buf))
+					.map_err(BevyErrorWrapper::from)??;
 			}
 		}
 
