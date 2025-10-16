@@ -6,7 +6,7 @@ pub use context::*;
 pub use ui_system::*;
 pub(crate) use ui_system_collection::*;
 
-use bevy_ecs::component::HookContext;
+use bevy_ecs::lifecycle::HookContext;
 use bevy_ecs::world::{DeferredWorld, EntityWorldMut, World};
 
 // TODO: documentation

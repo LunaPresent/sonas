@@ -95,17 +95,17 @@ where
 		world: &mut World,
 	) -> eyre::Result<Option<T>> {
 		match self.dispatch {
-			DispatchMethod::Input => {
-				world.run_system_once_with(Self::find_input_entities, queue)?
-			}
-			DispatchMethod::Broadcast => {
-				world.run_system_once_with(Self::find_broadcast_entities, queue)?
-			}
+			DispatchMethod::Input => world
+				.run_system_once_with(Self::find_input_entities, queue)
+				.map_err(BevyErrorWrapper::from)?,
+			DispatchMethod::Broadcast => world
+				.run_system_once_with(Self::find_broadcast_entities, queue)
+				.map_err(BevyErrorWrapper::from)?,
 			DispatchMethod::Cursor { x, y, action } => world
 				.run_system_cached_with(Self::find_cursor_entities, (queue, x, y, action))??,
-			DispatchMethod::Target(target) => {
-				world.run_system_once_with(Self::find_target_entities, (queue, target))?
-			}
+			DispatchMethod::Target(target) => world
+				.run_system_once_with(Self::find_target_entities, (queue, target))
+				.map_err(BevyErrorWrapper::from)?,
 		}
 
 		Ok(match self.dispatch {
